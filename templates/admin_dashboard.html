@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>markkundo. — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- TOP NAVIGATION BAR -->
+  <nav class="top-nav" role="navigation" aria-label="Main navigation">
+    <a href="/" class="nav-logo" aria-label="markkundo home">
+      <div class="nav-logo-mark">mk</div>
+      <span class="nav-wordmark">markkundo<span>.</span></span>
+    </a>
+
+    <div class="nav-tabs" role="tablist" aria-label="Page navigation">
+      <button class="nav-tab active" id="tab-admin-dashboard" role="tab" aria-selected="true" onclick="switchAdminTab('dashboard')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-tab" id="tab-admin-students" role="tab" aria-selected="false" onclick="switchAdminTab('students')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+      </button>
+      <button class="nav-tab" id="tab-admin-enter-marks" role="tab" aria-selected="false" onclick="switchAdminTab('enter-marks')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h6"/><path d="M8 9h5"/></svg>
+        Enter Marks
+      </button>
+      <button class="nav-tab" id="tab-admin-analysis" role="tab" aria-selected="false" onclick="switchAdminTab('analysis')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="7" width="7" height="14" rx="1"/></svg>
+        Analysis
+      </button>
+    </div>
+
+
+    <div class="nav-right">
+      <div class="user-avatar-area" aria-label="User menu" tabindex="0">
+        <div class="user-avatar">AD</div>
+        <div class="user-info">
+          <span class="user-name">Admin</span>
+          <span class="user-role">Administrator</span>
+        </div>
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--secondary-text)"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+
+    <!-- DASHBOARD TAB -->
+    <div class="admin-tab active" id="admin-dashboard">
+      <div class="greeting-row">
+        <h1>Admin Dashboard</h1>
+        <p>Manage student data, run ML analysis, and monitor performance</p>
+      </div>
+
+      <!-- Quick Stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card">
+          <div style="color: var(--secondary-text); font-size: 12px; margin-bottom: 8px;">Total Students</div>
+          <div style="font-size: 32px; font-weight: 700; color: var(--data-blue);" id="totalStudents">0</div>
+        </div>
+        <div class="card">
+          <div style="color: var(--secondary-text); font-size: 12px; margin-bottom: 8px;">Marks Entered</div>
+          <div style="font-size: 32px; font-weight: 700; color: var(--data-blue);" id="totalMarks">0</div>
+        </div>
+        <div class="card">
+          <div style="color: var(--secondary-text); font-size: 12px; margin-bottom: 8px;">ML Insights</div>
+          <div style="font-size: 32px; font-weight: 700; color: var(--data-blue);" id="totalInsights">0</div>
+        </div>
+      </div>
+
+      <!-- Data Entry & Analysis Section -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+
+        <!-- Data Entry Panel -->
+        <div class="card">
+          <h3 style="margin-bottom: 16px;">Enter Student Data</h3>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Exam Type</label>
+            <select id="examTypeSelect" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px;">
+              <option value="ISA">ISA</option>
+              <option value="LB">LB</option>
+              <option value="LD">LD</option>
+              <option value="CP">CP</option>
+              <option value="SEA1">SEA1</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Upload CSV</label>
+            <input type="file" id="csvUpload" accept=".csv" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px;"/>
+            <p style="font-size: 11px; color: var(--secondary-text); margin-top: 6px;">CSV Format: reg_no, subject, score, max_score</p>
+          </div>
+          <button class="btn-gradient" onclick="uploadMarks()" style="width: 100%;">Upload Marks</button>
+        </div>
+
+        <!-- ML Analysis Panel -->
+        <div class="card">
+          <h3 style="margin-bottom: 16px;">Run ML Analysis</h3>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Select Exam</label>
+            <select id="analysisExamSelect" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px;">
+              <option value="ISA">ISA</option>
+              <option value="LB">LB</option>
+              <option value="LD">LD</option>
+              <option value="CP">CP</option>
+              <option value="SEA1">SEA1</option>
+            </select>
+          </div>
+          <button class="btn-gradient" onclick="runAnalysis()" style="width: 100%;">Run Analysis</button>
+          <div id="analysisStatus" style="margin-top: 12px; padding: 12px; background: var(--tile-blue); border-radius: 8px; display: none; font-size: 12px; color: var(--secondary-text);">
+            <!-- Status will be shown here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster Distribution -->
+      <div class="card" style="margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px;">Cluster Distribution - <span id="clusterExamLabel">ISA</span></h3>
+        <div style="display: flex; gap: 16px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <canvas id="clusterChart"></canvas>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+              <div style="width: 12px; height: 12px; background: var(--grad-start); border-radius: 2px;"></div>
+              <span>Topper: <strong id="topperCount">0</strong></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+              <div style="width: 12px; height: 12px; background: #9CA3AF; border-radius: 2px;"></div>
+              <span>Average: <strong id="averageCount">0</strong></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+              <div style="width: 12px; height: 12px; background: #F472B6; border-radius: 2px;"></div>
+              <span>At-Risk: <strong id="atRiskCount">0</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- At-Risk Students Table -->
+      <div class="card">
+        <h3 style="margin-bottom: 16px;">At-Risk Students - <span id="atRiskExamLabel">ISA</span></h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--card-border);">
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Name</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Reg No</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Weak Subjects</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Avg Score</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Risk Level</th>
+              </tr>
+            </thead>
+            <tbody id="atRiskTable">
+              <tr><td colspan="5" style="padding: 12px; text-align: center; color: var(--secondary-text);">No at-risk students</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STUDENTS TAB -->
+    <div class="admin-tab" id="admin-students">
+      <div class="greeting-row">
+        <h1>Student Management</h1>
+        <p>Add new students to the system</p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 16px;">Add New Student</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Full Name</label>
+            <input type="text" id="studentName" placeholder="John Doe" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px;"/>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Email</label>
+            <input type="email" id="studentEmail" placeholder="john@example.com" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px;"/>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Registration No</label>
+            <input type="text" id="studentRegNo" placeholder="BCA/2024/001" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px;"/>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Semester</label>
+            <select id="studentSemester" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px;">
+              <option value="5" selected>5</option>
+              <option value="6">6</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-gradient" onclick="addStudent()" style="width: 100%;">Add Student</button>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <h3 style="margin-bottom: 16px;">All Students</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--card-border);">
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Name</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Email</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Reg No</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Semester</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTable">
+              <tr><td colspan="4" style="padding: 12px; text-align: center; color: var(--secondary-text);">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENTER MARKS TAB -->
+    <div class="admin-tab" id="admin-enter-marks">
+      <div class="greeting-row">
+        <h1>Enter Student Marks</h1>
+        <p>Pick an exam, pick a student, then enter subject-wise marks</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Exam Type</label>
+            <select id="entryExamType" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px;">
+              <option value="ISA">ISA</option>
+              <option value="LB">LB</option>
+              <option value="LD">LD</option>
+              <option value="CP">CP</option>
+              <option value="SEA1">SEA1</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Student</label>
+            <select id="entryStudentSelect" style="width: 100%; padding: 8px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 14px;">
+              <option value="">Loading students...</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-gradient" onclick="addEntryRow()" type="button" style="flex: 0 0 auto;">+ Add Row</button>
+          <button class="btn-gradient" onclick="saveEntryMarks()" type="button" style="flex: 1; min-width: 220px;">Save Marks</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 16px;">Marks Table</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--card-border);">
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Subject</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Score</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Max Score</th>
+                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="entryMarksTableBody">
+              <tr>
+                <td colspan="4" style="padding: 12px; text-align: center; color: var(--secondary-text);">Select a student to load marks</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS TAB -->
+    <div class="admin-tab" id="admin-analysis">
+      <div class="greeting-row">
+        <h1>Analysis & Notifications</h1>
+        <p>View ML-generated notifications and alerts</p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom: 16px;">Notification Log</h3>
+        <div style="max-height: 600px; overflow-y: auto;">
+          <div id="notificationLog" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="padding: 12px; background: var(--tile-blue); border-radius: 8px; font-size: 12px; color: var(--secondary-text);">
+              No notifications yet
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>
