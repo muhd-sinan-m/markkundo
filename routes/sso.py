@@ -21,11 +21,27 @@ def is_admin_email(email):
 
 
 def update_student_ml_insights(student_id):
-    """Generate or update ML insights for a student based on current DB marks"""
+    """Generate or update ML insights for a student based on current DB marks in batch"""
     try:
         exams = ['ISA', 'LB', 'LD', 'CP', 'SEA1', 'SEA2']
+        
+        # Batch preload all marks for this student
+        all_student_marks = Mark.query.filter_by(student_id=student_id).all()
+        if not all_student_marks:
+            return
+
+        student_marks_by_exam = {}
+        for m in all_student_marks:
+            student_marks_by_exam.setdefault(m.exam_type, []).append(m)
+
+        # Batch preload existing insights
+        existing_insights = {
+            ins.exam_type: ins 
+            for ins in MLInsight.query.filter_by(student_id=student_id).all()
+        }
+
         for exam in exams:
-            student_marks = Mark.query.filter_by(student_id=student_id, exam_type=exam).all()
+            student_marks = student_marks_by_exam.get(exam, [])
             if not student_marks:
                 continue
 
@@ -64,16 +80,17 @@ def update_student_ml_insights(student_id):
             else:
                 risk_level = 'info'
 
-            insight = MLInsight.query.filter_by(student_id=student_id, exam_type=exam).first()
+            insight = existing_insights.get(exam)
             if not insight:
                 insight = MLInsight(student_id=student_id, exam_type=exam)
+                db.session.add(insight)
+                existing_insights[exam] = insight
             
             insight.cluster = cluster
             insight.risk_level = risk_level
             insight.weak_subjects = json.dumps(weak_subjects[:3])
             insight.recommendation = recommendation
             insight.created_at = datetime.utcnow().isoformat()
-            db.session.add(insight)
 
         db.session.commit()
     except Exception as e:
@@ -175,11 +192,21 @@ def sso_login():
         student.college = college
         db.session.commit()
 
-    # 4. Process Subjects and Marks
+    # 4. Process Subjects and Marks in Batch
     subjects_data = payload.get('subjects', [])
     target_subject_name = None
     enrolled_subject_names = []
     enrolled_list = []
+
+    # Batch preload existing marks and subjects to eliminate N+1 queries
+    existing_marks = {
+        (m.subject, m.exam_type): m 
+        for m in Mark.query.filter_by(student_id=student.id).all()
+    }
+    existing_subjects = {
+        (s.name, s.semester): s 
+        for s in Subject.query.filter_by(semester=semester).all()
+    }
 
     for subj in subjects_data:
         s_id = subj.get('subject_id')
@@ -218,8 +245,8 @@ def sso_login():
         if target_subject_id and (str(s_id) == str(target_subject_id) or str(target_subject_id).lower() == s_name.lower()):
             target_subject_name = s_name
 
-        # Ensure Subject exists in DB
-        subject_record = Subject.query.filter_by(name=s_name, semester=s_sem).first()
+        # Ensure Subject exists in DB (using preloaded dictionary)
+        subject_record = existing_subjects.get((s_name, s_sem))
         if not subject_record:
             subject_record = Subject(
                 name=s_name,
@@ -231,12 +258,13 @@ def sso_login():
                 num_papers=0
             )
             db.session.add(subject_record)
+            existing_subjects[(s_name, s_sem)] = subject_record
         else:
             subject_record.credits = int(credit_val)
             subject_record.is_elective = s_is_elective
             subject_record.elective_group = s_elective_group
 
-        # Process Marks
+        # Process Marks in-memory (using preloaded dictionary)
         marks_dict = subj.get('marks', {})
         if isinstance(marks_dict, dict):
             for exam_key, raw_score in marks_dict.items():
@@ -250,12 +278,7 @@ def sso_login():
                 exam_type = exam_key.upper().strip()
                 max_score = get_max_score_for_subject_and_exam(credit_val, exam_type)
 
-                # Upsert Mark record
-                existing_mark = Mark.query.filter_by(
-                    student_id=student.id,
-                    subject=s_name,
-                    exam_type=exam_type
-                ).first()
+                existing_mark = existing_marks.get((s_name, exam_type))
 
                 if existing_mark:
                     existing_mark.score = score
@@ -273,6 +296,7 @@ def sso_login():
                         entered_at=datetime.utcnow().isoformat()
                     )
                     db.session.add(new_mark)
+                    existing_marks[(s_name, exam_type)] = new_mark
 
     # Save student's active enrolled subjects from Padikkunnundo
     student.enrolled_subjects = json.dumps(enrolled_list)

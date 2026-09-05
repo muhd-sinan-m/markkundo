@@ -275,33 +275,35 @@ def mark_all_notifications_read():
 @bp.route('/api/student/class-rank/<exam_type>')
 @login_required
 def get_class_rank(exam_type):
-    """Get student's class rank for an exam from DB"""
+    """Get student's class rank for an exam from DB using optimized single-query aggregation"""
+    from sqlalchemy import func
     student = get_or_create_student()
     subject = request.args.get('subject', default=None, type=str)
 
-    # Calculate student's average for this exam (or selected subject)
-    q = Mark.query.filter_by(student_id=student.id, exam_type=exam_type)
+    # 1. Calculate student's average for this exam in a single query
+    q = db.session.query(func.avg(Mark.score)).filter(
+        Mark.student_id == student.id,
+        Mark.exam_type == exam_type
+    )
     if subject:
-        q = q.filter_by(subject=subject)
-    student_marks = q.all()
+        q = q.filter(Mark.subject == subject)
+    student_avg_res = q.scalar()
 
-    if not student_marks:
+    if student_avg_res is None:
         return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': 0, 'class_avg': 0})
 
-    student_avg = sum(m.score for m in student_marks) / len(student_marks)
+    student_avg = float(student_avg_res)
 
-    # Get all students' averages for this exam
-    all_students = Student.query.all()
-    rankings = []
+    # 2. Get all students' averages for this exam in a single GROUP BY query (eliminating N+1)
+    rank_query = db.session.query(
+        Mark.student_id,
+        func.avg(Mark.score).label('avg_score')
+    ).filter(Mark.exam_type == exam_type)
 
-    for s in all_students:
-        q2 = Mark.query.filter_by(student_id=s.id, exam_type=exam_type)
-        if subject:
-            q2 = q2.filter_by(subject=subject)
-        s_marks = q2.all()
-        if s_marks:
-            s_avg = sum(m.score for m in s_marks) / len(s_marks)
-            rankings.append((s.id, s_avg))
+    if subject:
+        rank_query = rank_query.filter(Mark.subject == subject)
+
+    rankings = rank_query.group_by(Mark.student_id).all()
 
     if not rankings:
         return jsonify({
@@ -312,11 +314,12 @@ def get_class_rank(exam_type):
             'class_avg': round(student_avg, 1)
         })
 
-    rankings.sort(key=lambda x: x[1], reverse=True)
-    rank = next((i + 1 for i, (sid, _) in enumerate(rankings) if sid == student.id), 1)
-    total = len(rankings)
+    # Sort rankings in descending order
+    rankings_sorted = sorted(rankings, key=lambda x: float(x[1]), reverse=True)
+    rank = next((i + 1 for i, (sid, _) in enumerate(rankings_sorted) if sid == student.id), 1)
+    total = len(rankings_sorted)
     percentile = round(((total - rank + 1) / total) * 100, 1) if total > 0 else 100
-    class_avg = round(sum(r[1] for r in rankings) / total, 1) if total > 0 else round(student_avg, 1)
+    class_avg = round(sum(float(r[1]) for r in rankings_sorted) / total, 1) if total > 0 else round(student_avg, 1)
 
     return jsonify({
         'rank': rank,

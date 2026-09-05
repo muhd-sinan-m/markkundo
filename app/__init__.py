@@ -29,16 +29,25 @@ def create_app():
 
     # ── Configuration ──────────────────────────────────────────────────────────
     db_path = os.path.join(basedir, 'instance', 'markkundo.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL', f'sqlite:///{db_path}'
-    )
+    database_url = os.getenv('DATABASE_URL', f'sqlite:///{db_path}')
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 5,
-        'max_overflow': 10,
-        'pool_recycle': 300,
-        'pool_pre_ping': True,
-    }
+    
+    # Configure production connection pooling for PostgreSQL / Supabase
+    if 'sqlite' not in database_url.lower():
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_size': 10,
+            'max_overflow': 20,
+            'pool_recycle': 300,
+            'pool_pre_ping': True,
+            'pool_timeout': 30,
+        }
+    else:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+        }
+
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 2592000  # 30-day static asset cache
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-markkundo')
     app.config['PERMANENT_SESSION_LIFETIME'] = 7200  # 2 hours max
 
@@ -92,13 +101,18 @@ def create_app():
 
 
 
-    # ── Security headers on every response ─────────────────────────────────────
+    # ── Security & Caching headers on every response ───────────────────────────
     @app.after_request
     def add_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+        from flask import request
+        if request.path.startswith('/static/'):
+            response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+
         if not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response

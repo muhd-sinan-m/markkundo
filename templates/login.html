@@ -7,32 +7,35 @@
   <meta name="description" content="markkundo Single Sign-On Portal — Integrated with Padikkunnundo." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #f8fafc;
-      --surface:   #ffffff;
-      --surface-2: #f1f5f9;
-      --border:    #e2e8f0;
-      --text:      #0f172a;
-      --text-body: #334155;
-      --muted:     #64748b;
-      --primary:   #4f46e5;
-      --cyan:      #0284c7;
-      --danger:    #e11d48;
-      --danger-bg: #fff1f2;
-      --danger-border: #fecdd3;
-      --success:   #059669;
-      --success-bg:#ecfdf5;
-      --success-border: #a7f3d0;
+      --bg:          #f8fafc;
+      --surface:     #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border:      #e2e8f0;
+      --border-subtle:#edf2f7;
+      --text:        #0f172a;
+      --text-body:   #334155;
+      --muted:       #64748b;
+      --primary:     #4f46e5;
+      --primary-hover:#4338ca;
+      --primary-subtle:#eef2ff;
+      --cyan:        #0284c7;
+      --danger:      #e11d48;
+      --danger-bg:   #fff1f2;
+      --danger-border:#fecdd3;
+      --success:     #059669;
+      --success-bg:  #ecfdf5;
+      --success-border:#a7f3d0;
       --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-body:   'Inter', system-ui, -apple-system, sans-serif;
     }
 
     html, body {
-      height: 100%;
+      min-height: 100vh;
       font-family: var(--font-body);
       background: var(--bg);
       color: var(--text-body);
@@ -42,7 +45,7 @@
     .sso-container {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 1fr 500px;
+      grid-template-columns: 1.15fr 1fr;
     }
 
     @media (max-width: 960px) {
@@ -62,74 +65,84 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 60px 80px;
+      padding: 48px 64px;
       position: relative;
-      overflow: hidden;
     }
 
     .left-content {
-      position: relative;
-      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      max-width: 420px;
     }
 
     .brand-header {
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+      text-decoration: none;
     }
 
     .brand-logo-img {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
       object-fit: cover;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.18);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+      border: 1px solid var(--border);
     }
 
     .brand-title {
       font-family: var(--font-display);
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
       color: var(--text);
     }
     .brand-title span { color: var(--primary); }
 
+    /* Large Full Hero Image Box */
     .hero-img-box {
-      width: 240px;
-      margin: 0 auto 28px;
-      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto 24px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
-      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px var(--border);
       background: #ffffff;
-      padding: 12px;
+      transition: transform 0.3s ease;
     }
+
+    .hero-img-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.16), 0 0 0 1px #cbd5e1;
+    }
+
     .hero-img-box img {
       width: 100%;
       height: auto;
       display: block;
-      border-radius: 8px;
+      object-fit: cover;
     }
 
     .feature-points {
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 10px;
       text-align: left;
-      margin-top: 10px;
     }
 
     .feature-item {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--muted);
-      background: var(--surface-2);
+      background: var(--surface-subtle);
       padding: 10px 16px;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -141,19 +154,19 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding: 60px 48px;
+      padding: 48px 48px;
       background: var(--bg);
     }
 
     .sso-card {
-      max-width: 400px;
+      max-width: 440px;
       width: 100%;
       margin: 0 auto;
     }
 
     .sso-heading {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.03em;
       margin-bottom: 6px;
@@ -161,21 +174,22 @@
     }
 
     .sso-subtext {
-      font-size: 13.5px;
+      font-size: 14px;
       color: var(--muted);
       line-height: 1.5;
       margin-bottom: 24px;
     }
 
     .alert-box {
-      padding: 12px 16px;
-      border-radius: 10px;
+      padding: 14px 16px;
+      border-radius: 12px;
       font-size: 13px;
       line-height: 1.5;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
 
     .alert-danger {
@@ -194,33 +208,33 @@
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 18px;
+      padding: 20px;
       margin-bottom: 24px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     }
 
     .sso-step {
       display: flex;
-      gap: 10px;
-      font-size: 12.5px;
+      gap: 12px;
+      font-size: 13px;
       color: var(--text-body);
       line-height: 1.5;
     }
 
     .sso-step-num {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      background: #eef2ff;
+      background: var(--primary-subtle);
       color: var(--primary);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 11px;
+      font-size: 11.5px;
       flex-shrink: 0;
       border: 1px solid #c7d2fe;
     }
@@ -231,10 +245,10 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
-      padding: 13px 20px;
-      border-radius: 10px;
+      padding: 14px 22px;
+      border-radius: 12px;
       font-family: var(--font-display);
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 700;
       color: #fff;
       background: var(--primary);
@@ -246,7 +260,7 @@
     }
 
     .btn-sso:hover {
-      background: #4338ca;
+      background: var(--primary-hover);
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
     }
@@ -254,7 +268,7 @@
     .sso-footer {
       margin-top: 28px;
       text-align: center;
-      font-size: 11.5px;
+      font-size: 12px;
       color: var(--muted);
     }
   </style>
@@ -262,16 +276,17 @@
 <body>
 
   <div class="sso-container">
-    <!-- Left branding banner -->
+    <!-- Left branding banner with Large Full Image -->
     <div class="sso-left">
       <div class="left-content">
-        <div class="brand-header">
+        <a href="/" class="brand-header">
           <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo logo" class="brand-logo-img" />
           <span class="brand-title">markkundo<span>.</span></span>
-        </div>
+        </a>
 
+        <!-- Large Full View Artwork -->
         <div class="hero-img-box">
-          <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo analytics logo" />
+          <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo academic intelligence" />
         </div>
 
         <div class="feature-points">
@@ -286,13 +301,13 @@
             <svg width="16" height="16" fill="none" stroke="#4f46e5" stroke-width="2.5" viewBox="0 0 24 24">
               <path d="M18 20V10M12 20V4M6 20v-6" />
             </svg>
-            <div><span>Automatic Marks Sync</span> per semester</div>
+            <div><span>Automatic Marks Sync</span> per active semester</div>
           </div>
           <div class="feature-item">
             <svg width="16" height="16" fill="none" stroke="#0284c7" stroke-width="2.5" viewBox="0 0 24 24">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
-            <div><span>ML Academic Insights</span> & Study Strategies</div>
+            <div><span>ML Academic Insights</span> & Priority Scheduling</div>
           </div>
         </div>
       </div>
@@ -306,7 +321,7 @@
 
         {% if error %}
         <div class="alert-box alert-danger">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top: 1px;">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -317,7 +332,7 @@
 
         {% if message %}
         <div class="alert-box alert-success">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top: 1px;">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
