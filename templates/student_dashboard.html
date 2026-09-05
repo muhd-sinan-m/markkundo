@@ -120,7 +120,7 @@
             <div class="student-hero-card">
               <div class="student-hero-header">
                 <div class="student-hero-avatar">
-                  {{ (student.name[:2] if student and student.name else 'ST')).upper() }}
+                  {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
                 </div>
                 <div class="student-hero-meta">
                   <h2>{{ student.name if student else 'Student' }}</h2>
