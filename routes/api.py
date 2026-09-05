@@ -52,6 +52,15 @@ def student_dashboard():
     return render_template('student_dashboard.html', student=student, user=current_user, target_subject=target_subject)
 
 
+@bp.route('/about')
+def about():
+    """About Markkundo & Developer Spotlight"""
+    student = None
+    if current_user.is_authenticated and session.get('sso_authenticated'):
+        student = get_or_create_student()
+    return render_template('about.html', student=student, user=current_user)
+
+
 @bp.route('/api/student/profile')
 @login_required
 def get_student_profile():

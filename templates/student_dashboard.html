@@ -51,8 +51,16 @@
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          <span class="nav-tab-label">Study Schedule & Priorities</span>
+          <span class="nav-tab-label">Study Schedule</span>
         </button>
+        <a href="{{ url_for('api.about') }}" class="nav-tab" id="tab-about" role="tab" aria-selected="false">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          <span class="nav-tab-label">About</span>
+        </a>
       </div>
 
       <!-- Right controls -->

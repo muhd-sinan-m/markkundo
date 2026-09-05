@@ -99,10 +99,10 @@ def create_app():
         from flask import session, request, redirect, url_for, jsonify
         from flask_login import current_user, logout_user
 
-        # Whitelist static assets, favicon, and auth endpoints
+        # Whitelist static assets, favicon, about, and auth endpoints
         endpoint = request.endpoint or ''
         if endpoint.startswith('static') or endpoint in [
-            'favicon', 'auth.login', 'auth.logout', 'sso.sso_login'
+            'favicon', 'api.about', 'auth.login', 'auth.logout', 'sso.sso_login'
         ]:
             return
 
