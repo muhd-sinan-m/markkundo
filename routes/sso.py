@@ -213,12 +213,12 @@ def sso_login():
     new_marks_to_add = []
 
     for subj in subjects_data:
-        s_id = subj.get('subject_id')
-        s_name = (subj.get('subject_name') or '').strip()
+        s_id = subj.get('subject_id') or subj.get('id')
+        s_name = (subj.get('subject_name') or subj.get('name') or '').strip()
         if not s_name:
             continue
 
-        s_credit = subj.get('credit')
+        s_credit = subj.get('credit') or subj.get('credits')
         try:
             credit_val = float(s_credit) if s_credit is not None else 4.0
         except (ValueError, TypeError):
@@ -267,18 +267,18 @@ def sso_login():
             subject_record.is_elective = s_is_elective
             subject_record.elective_group = s_elective_group
 
-        # Process Marks
+        # Process Marks (isa, cp, lb, ld, sea1, sea2)
         marks_dict = subj.get('marks', {})
         if isinstance(marks_dict, dict):
             for exam_key, raw_score in marks_dict.items():
-                if raw_score is None:
+                if raw_score is None or raw_score == '':
                     continue
                 try:
                     score = float(raw_score)
                 except (ValueError, TypeError):
                     continue
 
-                exam_type = exam_key.upper().strip()
+                exam_type = str(exam_key).upper().strip()
                 if exam_type == 'SEA2':
                     continue
                 max_score = get_max_score_for_subject_and_exam(credit_val, exam_type)
@@ -320,7 +320,7 @@ def sso_login():
     login_user(user, remember=False)
     current_app.logger.info(f"SSO login success for {email} (role: {user.role}, semester: {semester})")
 
-    # 8. Redirect with target subject if specified
+    # 8. Redirect directly to overview dashboard
     if is_admin and not request.args.get('as_student'):
         return redirect(url_for('admin.dashboard'))
     
@@ -328,7 +328,5 @@ def sso_login():
     if target_subject_name:
         session['target_subject'] = target_subject_name
         redirect_url += f"?subject={target_subject_name}"
-    elif target_subject_id:
-        redirect_url += f"?subject_id={target_subject_id}"
 
     return redirect(redirect_url)
