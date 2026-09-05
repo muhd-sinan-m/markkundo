@@ -168,3 +168,115 @@ class AnomalyDetector:
                 })
         
         return sorted(anomalies, key=lambda x: x['z_score'])
+
+
+class ExamDifficultyAnalyzer:
+    """
+    ML Module 4: Exam Difficulty & Cohort Context Analyzer
+    Evaluates paper difficulty based on total class performance distribution,
+    and provides empathetic, calm, and constructive feedback.
+    """
+    @staticmethod
+    def analyze_difficulty(all_marks_data, student_marks_data=None, selected_subject=None):
+        """
+        - all_marks_data: list of marks dicts for the exam across all students
+        - student_marks_data: list of marks dicts for the specific student
+        - selected_subject: optional subject filter
+        """
+        if not all_marks_data:
+            return {
+                'difficulty': 'Moderate',
+                'difficulty_level': 'moderate',
+                'class_avg_pct': 0,
+                'high_score_ratio': 0,
+                'interpretation': 'Standard assessment difficulty.'
+            }
+
+        df_all = pd.DataFrame(all_marks_data)
+        if selected_subject:
+            df_all = df_all[df_all['subject'] == selected_subject]
+
+        if df_all.empty:
+            return {
+                'difficulty': 'Moderate',
+                'difficulty_level': 'moderate',
+                'class_avg_pct': 0,
+                'high_score_ratio': 0,
+                'interpretation': 'Standard assessment difficulty.'
+            }
+
+        df_all['score_pct'] = (df_all['score'] / df_all['max_score']) * 100
+        class_avg_pct = float(df_all['score_pct'].mean())
+        
+        # Ratio of students scoring >= 80% (equivalent to >8 out of 10)
+        high_scorers = len(df_all[df_all['score_pct'] >= 80])
+        high_score_ratio = (high_scorers / len(df_all)) if len(df_all) > 0 else 0
+
+        # Classify difficulty based on overall class average
+        if class_avg_pct < 50.0:
+            difficulty = "Challenging"
+            difficulty_level = "hard"
+        elif class_avg_pct <= 75.0:
+            difficulty = "Moderate"
+            difficulty_level = "moderate"
+        else:
+            difficulty = "Accessible"
+            difficulty_level = "easy"
+
+        # Personalized interpretation & encouraging feedback
+        student_avg_pct = None
+        interpretation = ""
+
+        if student_marks_data:
+            df_stu = pd.DataFrame(student_marks_data)
+            if selected_subject:
+                df_stu = df_stu[df_stu['subject'] == selected_subject]
+            
+            if not df_stu.empty:
+                df_stu['score_pct'] = (df_stu['score'] / df_stu['max_score']) * 100
+                student_avg_pct = float(df_stu['score_pct'].mean())
+
+                # Special scenario:
+                # Many students scored >80% (>8/10), but student scored <=35% (e.g., 3/10)
+                if (high_score_ratio >= 0.35 or class_avg_pct >= 70.0) and student_avg_pct <= 40.0:
+                    interpretation = (
+                        f"The class performed strongly in this assessment (Class Avg: {class_avg_pct:.0f}%, with many students scoring above 80%). "
+                        f"Your score was {student_avg_pct:.0f}%. While this shows a gap in preparation for this specific test, "
+                        f"take a deep breath—everyone encounters setbacks from time to time! Don't be discouraged at all. "
+                        f"With calm, focused practice on the core concepts and revising previous papers, you can easily turn this around and excel in the next assessment. "
+                        f"We believe in your potential!"
+                    )
+                elif difficulty_level == "hard" and student_avg_pct <= 45.0:
+                    interpretation = (
+                        f"This assessment was particularly tough across the entire cohort (Class Avg: {class_avg_pct:.0f}%). "
+                        f"Your score of {student_avg_pct:.0f}% reflects the high difficulty level of the paper. "
+                        f"Stay positive, practice key problem types, and you will see strong progress."
+                    )
+                elif student_avg_pct >= 80.0:
+                    interpretation = (
+                        f"Outstanding achievement! You scored an impressive {student_avg_pct:.0f}% "
+                        f"(Class Avg: {class_avg_pct:.0f}%). Keep up the great work and maintain this momentum!"
+                    )
+                elif student_avg_pct >= class_avg_pct:
+                    interpretation = (
+                        f"Well done! You are performing comfortably above the class average ({student_avg_pct:.0f}% vs {class_avg_pct:.0f}%). "
+                        f"Keep practicing regularly to secure high grades."
+                    )
+                else:
+                    interpretation = (
+                        f"Your score of {student_avg_pct:.0f}% is close to the class average ({class_avg_pct:.0f}%). "
+                        f"A little dedicated review before the next test will help you push into the top tier."
+                    )
+
+        if not interpretation:
+            interpretation = f"Overall class average is {class_avg_pct:.0f}%, indicating a {difficulty.lower()} assessment level."
+
+        return {
+            'difficulty': difficulty,
+            'difficulty_level': difficulty_level,
+            'class_avg_pct': round(class_avg_pct, 1),
+            'student_avg_pct': round(student_avg_pct, 1) if student_avg_pct is not None else None,
+            'high_score_ratio': round(high_score_ratio, 2),
+            'interpretation': interpretation
+        }
+

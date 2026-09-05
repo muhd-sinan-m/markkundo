@@ -194,11 +194,24 @@ async function loadSubjectInsights(examType) {
     const res = await fetch(url);
     let insightText = "";
     let riskLevel = "info";
+    let difficulty = "Moderate";
+    let difficultyLevel = "moderate";
+    let classAvgPct = 0;
+
     if (res.ok) {
       const insight = await res.json();
       insightText = insight.recommendation || "";
       riskLevel = insight.risk_level || "info";
+      difficulty = insight.difficulty || "Moderate";
+      difficultyLevel = insight.difficulty_level || "moderate";
+      classAvgPct = insight.class_avg_pct || 0;
     }
+
+    const diffBadgeStyles = {
+      'hard': 'background: rgba(255, 77, 109, 0.15); color: #ff6b8b; border: 1px solid rgba(255, 77, 109, 0.3);',
+      'moderate': 'background: rgba(108, 99, 255, 0.15); color: var(--grad-start); border: 1px solid rgba(108, 99, 255, 0.3);',
+      'easy': 'background: rgba(0, 212, 170, 0.15); color: #00d4aa; border: 1px solid rgba(0, 212, 170, 0.3);'
+    };
 
     const tips = [
       "⚡ <strong>Active Recall:</strong> Practice previous year questions for core concepts instead of passive re-reading.",
@@ -208,11 +221,19 @@ async function loadSubjectInsights(examType) {
 
     let content = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--secondary-text); text-transform: uppercase; letter-spacing: 0.05em;">Cohort Assessment Context</span>
+          <span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
+            📊 ${difficulty} Exam · Class Avg: ${classAvgPct}%
+          </span>
+        </div>
+
         ${insightText ? `
-          <div style="padding: 14px; background: var(--tile-blue); border-left: 4px solid ${riskLevel === 'critical' ? 'var(--color-danger)' : 'var(--grad-start)'}; border-radius: 8px; font-size: 13px; color: var(--body-text); line-height: 1.5;">
-            <strong>Target Insight:</strong> ${insightText}
+          <div style="padding: 14px 16px; background: var(--tile-blue); border-left: 4px solid ${riskLevel === 'critical' ? 'var(--color-danger)' : 'var(--grad-start)'}; border-radius: 8px; font-size: 13px; color: var(--body-text); line-height: 1.6;">
+            <strong>Analysis & Feedback:</strong> ${insightText}
           </div>
         ` : ''}
+
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
           <span style="font-size: 12px; font-weight: 700; color: var(--secondary-text); text-transform: uppercase; letter-spacing: 0.05em;">Recommended Study Practices</span>
           ${tips.map(tip => `
@@ -225,6 +246,7 @@ async function loadSubjectInsights(examType) {
     `;
 
     focusList.innerHTML = content;
+
   } catch (err) {
     console.error('Error loading insights:', err);
   }

@@ -136,6 +136,30 @@ def get_insights(exam_type):
         if not insight:
             return jsonify({'error': 'No insights available'}), 404
 
+    from ml.ml_engine import ExamDifficultyAnalyzer
+
+    # Calculate Exam Difficulty from total class marks
+    all_exam_marks = Mark.query.filter_by(exam_type=exam_type).all()
+    all_marks_list = [{
+        'student_id': m.student_id,
+        'subject': m.subject,
+        'score': m.score,
+        'max_score': m.max_score
+    } for m in all_exam_marks]
+
+    student_marks_list = [{
+        'student_id': student.id,
+        'subject': m.subject,
+        'score': m.score,
+        'max_score': m.max_score
+    } for m in Mark.query.filter_by(student_id=student.id, exam_type=exam_type).all()]
+
+    diff_analysis = ExamDifficultyAnalyzer.analyze_difficulty(
+        all_marks_list,
+        student_marks_data=student_marks_list,
+        selected_subject=subject
+    )
+
     weak_subjects = json.loads(insight.weak_subjects) if insight.weak_subjects else []
 
     # If a subject is selected, adapt focus/risk/recommendation to that subject
@@ -152,27 +176,35 @@ def get_insights(exam_type):
             elif risk_level == 'warning':
                 risk_level = 'info'
 
-        recommendation = insight.recommendation or ''
-        if subject not in recommendation:
-            if is_weak:
-                recommendation = f"Focus on {subject}: your score is below the class average for this subject. Review past papers and practice core questions."
-            else:
-                recommendation = f"{subject} looks stable: maintain your regular practice and revision."
+        recommendation = diff_analysis.get('interpretation') or insight.recommendation or ''
+        if subject not in recommendation and is_weak:
+            recommendation += f" Specifically for {subject}: focus on foundational question patterns."
 
         return jsonify({
             'cluster': insight.cluster or 'Average',
             'risk_level': risk_level or 'info',
             'weak_subjects': filtered_weak if filtered_weak else [subject] if is_weak else [],
             'recommendation': recommendation,
-            'selected_subject': subject
+            'selected_subject': subject,
+            'difficulty': diff_analysis.get('difficulty', 'Moderate'),
+            'difficulty_level': diff_analysis.get('difficulty_level', 'moderate'),
+            'class_avg_pct': diff_analysis.get('class_avg_pct', 0),
+            'student_avg_pct': diff_analysis.get('student_avg_pct'),
+            'interpretation': diff_analysis.get('interpretation')
         })
 
     return jsonify({
         'cluster': insight.cluster or 'Average',
         'risk_level': insight.risk_level or 'info',
         'weak_subjects': weak_subjects,
-        'recommendation': insight.recommendation or "Review your subjects regularly to maintain top marks."
+        'recommendation': diff_analysis.get('interpretation') or insight.recommendation or "Review your subjects regularly to maintain top marks.",
+        'difficulty': diff_analysis.get('difficulty', 'Moderate'),
+        'difficulty_level': diff_analysis.get('difficulty_level', 'moderate'),
+        'class_avg_pct': diff_analysis.get('class_avg_pct', 0),
+        'student_avg_pct': diff_analysis.get('student_avg_pct'),
+        'interpretation': diff_analysis.get('interpretation')
     })
+
 
 @bp.route('/api/student/notifications')
 @login_required
