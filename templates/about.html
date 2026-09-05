@@ -184,14 +184,8 @@
       width: 68px;
       height: 68px;
       border-radius: 18px;
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #0284c7 100%);
-      color: #ffffff;
-      font-family: var(--font-display);
-      font-size: 24px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      object-fit: cover;
+      display: block;
       box-shadow: 0 6px 18px rgba(79, 70, 229, 0.25);
       border: 3px solid #ffffff;
       flex-shrink: 0;
@@ -504,7 +498,7 @@
         <div class="dev-card">
           <div>
             <div class="dev-card-inner">
-              <div class="dev-avatar" aria-label="Akshara Suresh">AS</div>
+              <img src="{{ url_for('static', filename='img/akshara.webp') }}" alt="Akshara Suresh" class="dev-avatar" />
               <div style="flex: 1;">
                 <div class="dev-name-row">
                   <span class="dev-name">Akshara Suresh</span>
