@@ -99,10 +99,10 @@ def create_app():
         from flask import session, request, redirect, url_for, jsonify
         from flask_login import current_user, logout_user
 
-        # Whitelist static assets and auth endpoints
+        # Whitelist static assets, favicon, and auth endpoints
         endpoint = request.endpoint or ''
         if endpoint.startswith('static') or endpoint in [
-            'auth.login', 'auth.logout', 'sso.sso_login'
+            'favicon', 'auth.login', 'auth.logout', 'sso.sso_login'
         ]:
             return
 
@@ -186,12 +186,20 @@ def create_app():
         except Exception:
             pass
 
-        # ── Blueprints ─────────────────────────────────────────────────────────
+        # ── Blueprints & Static Routes ─────────────────────────────────────────
+        @app.route('/favicon.ico')
+        def favicon():
+            from flask import send_from_directory
+            return send_from_directory(
+                os.path.join(app.static_folder, 'favicon'),
+                'favicon.ico',
+                mimetype='image/vnd.microsoft.icon'
+            )
+
         from app.routes import api, auth, admin, sso
         app.register_blueprint(api.bp)
         app.register_blueprint(auth.bp)
         app.register_blueprint(admin.bp)
         app.register_blueprint(sso.bp)
-
 
     return app
