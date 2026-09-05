@@ -132,14 +132,49 @@ async function switchExamTab(btn, examType) {
   const panel = document.getElementById('examResultsPanel');
   if (!panel) return;
   
-  panel.innerHTML = '<div class="focus-row-placeholder">Loading subject assessments...</div>';
+  // Show animated skeleton cards immediately
+  panel.innerHTML = `
+    <div class="subject-mark-grid">
+      <div class="skeleton-mark-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <div class="metric-skeleton-pulse" style="width: 140px; height: 18px;"></div>
+          <div class="metric-skeleton-pulse" style="width: 50px; height: 18px;"></div>
+        </div>
+        <div class="metric-skeleton-pulse" style="width: 100%; height: 6px; border-radius:4px; margin-bottom: 6px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="metric-skeleton-pulse" style="width: 75px; height: 20px; border-radius:12px;"></div>
+          <div class="metric-skeleton-pulse" style="width: 65px; height: 14px;"></div>
+        </div>
+      </div>
+      <div class="skeleton-mark-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <div class="metric-skeleton-pulse" style="width: 150px; height: 18px;"></div>
+          <div class="metric-skeleton-pulse" style="width: 50px; height: 18px;"></div>
+        </div>
+        <div class="metric-skeleton-pulse" style="width: 100%; height: 6px; border-radius:4px; margin-bottom: 6px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="metric-skeleton-pulse" style="width: 75px; height: 20px; border-radius:12px;"></div>
+          <div class="metric-skeleton-pulse" style="width: 65px; height: 14px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Fetch Class Rank Metrics and ML Insights in parallel
+  fetchClassMetrics(examType);
+  loadSubjectInsights(examType);
   
   try {
-    const examData = cachedExamsData[examType] || (await (await fetch('/api/student/exams')).json())[examType];
+    const [examData] = await Promise.all([
+      (async () => {
+        return cachedExamsData[examType] || (await (await fetch('/api/student/exams', { cache: 'no-store' })).json())[examType];
+      })(),
+      new Promise(resolve => setTimeout(resolve, 240)) // ensure visible smooth transition
+    ]);
     
     if (!examData || !examData.marks || examData.marks.length === 0) {
       panel.innerHTML = `
-        <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+        <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);" class="metric-value-fade">
           <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 10px; color: var(--text-dim);">
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
@@ -148,14 +183,13 @@ async function switchExamTab(btn, examType) {
         </div>
       `;
       updateMetricTiles(examType, null, null, null);
-      loadSubjectInsights(examType);
       return;
     }
     
     const subjectFilter = document.getElementById('subjectDropdown')?.value?.toLowerCase() || '';
 
     const cardsHtml = examData.marks
-      .filter(m => !subjectFilter || m.subject.toLowerCase().includes(subjectFilter))
+      .filter(m => !subjectFilter || m.subject.toLowerCase().includes(subjectFilter) || subjectFilter.includes(m.subject.toLowerCase()))
       .map(m => {
         const isEntered = (m.score !== null && m.score !== undefined && !isNaN(Number(m.score)));
         const score = isEntered ? Number(m.score) : null;
@@ -207,7 +241,7 @@ async function switchExamTab(btn, examType) {
         }
 
         return `
-          <div class="subject-mark-card">
+          <div class="subject-mark-card metric-value-fade">
             <div class="subject-card-header">
               <div>
                 <div class="subject-card-title">${m.subject}</div>
@@ -231,13 +265,11 @@ async function switchExamTab(btn, examType) {
         `;
       }).join('');
 
-    panel.innerHTML = `<div class="subject-mark-grid">${cardsHtml}</div>`;
-    
-    // Fetch Rank and Class Score
-    fetchClassMetrics(examType);
-
-    // Update performance insights
-    loadSubjectInsights(examType);
+    panel.innerHTML = cardsHtml ? `<div class="subject-mark-grid">${cardsHtml}</div>` : `
+      <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);" class="metric-value-fade">
+        <div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No assessment records for selected subject in ${examType}</div>
+      </div>
+    `;
   } catch (err) {
     panel.innerHTML = '<div style="color:var(--color-danger); padding: 16px;">Failed to load marks</div>';
   }
@@ -268,7 +300,10 @@ async function fetchClassMetrics(examType) {
   }
 
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const [res] = await Promise.all([
+      fetch(url, { cache: 'no-store' }),
+      new Promise(resolve => setTimeout(resolve, 240)) // guarantee smooth visible shimmer
+    ]);
     if (res.ok) {
       const data = await res.json();
 
@@ -372,7 +407,10 @@ async function loadSubjectInsights(examType) {
   `;
 
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const [res] = await Promise.all([
+      fetch(url, { cache: 'no-store' }),
+      new Promise(resolve => setTimeout(resolve, 240)) // guarantee smooth visible shimmer
+    ]);
     let insightText = "";
     let riskLevel = "info";
     let difficulty = "Moderate";
