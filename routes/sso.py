@@ -192,25 +192,25 @@ def sso_login():
         student.college = college
         db.session.commit()
 
-    # 4. Process Subjects and Marks in Batch
+    # 4. Synchronize Subjects and Marks with latest payload from Padikkunnundo
     subjects_data = payload.get('subjects', [])
     target_subject_name = None
     enrolled_subject_names = []
     enrolled_list = []
 
-    # Batch preload existing marks and subjects to eliminate N+1 queries
-    existing_marks = {
-        (m.subject, m.exam_type): m 
-        for m in Mark.query.filter_by(student_id=student.id).all()
-    }
+    # Cleanly remove old marks for this student in this semester to prevent stale/duplicate values
+    Mark.query.filter_by(student_id=student.id, semester=semester).delete(synchronize_session=False)
+
     existing_subjects = {
-        (s.name, s.semester): s 
+        (s.name.strip().lower(), s.semester): s 
         for s in Subject.query.filter_by(semester=semester).all()
     }
 
+    new_marks_to_add = []
+
     for subj in subjects_data:
         s_id = subj.get('subject_id')
-        s_name = subj.get('subject_name')
+        s_name = (subj.get('subject_name') or '').strip()
         if not s_name:
             continue
 
@@ -241,12 +241,11 @@ def sso_login():
             'num_papers': 0
         })
 
-        # Check if this matches the target_subject_id
         if target_subject_id and (str(s_id) == str(target_subject_id) or str(target_subject_id).lower() == s_name.lower()):
             target_subject_name = s_name
 
-        # Ensure Subject exists in DB (using preloaded dictionary)
-        subject_record = existing_subjects.get((s_name, s_sem))
+        # Ensure Subject exists in DB
+        subject_record = existing_subjects.get((s_name.lower(), s_sem))
         if not subject_record:
             subject_record = Subject(
                 name=s_name,
@@ -258,13 +257,13 @@ def sso_login():
                 num_papers=0
             )
             db.session.add(subject_record)
-            existing_subjects[(s_name, s_sem)] = subject_record
+            existing_subjects[(s_name.lower(), s_sem)] = subject_record
         else:
             subject_record.credits = int(credit_val)
             subject_record.is_elective = s_is_elective
             subject_record.elective_group = s_elective_group
 
-        # Process Marks in-memory (using preloaded dictionary)
+        # Process Marks
         marks_dict = subj.get('marks', {})
         if isinstance(marks_dict, dict):
             for exam_key, raw_score in marks_dict.items():
@@ -278,36 +277,21 @@ def sso_login():
                 exam_type = exam_key.upper().strip()
                 max_score = get_max_score_for_subject_and_exam(credit_val, exam_type)
 
-                existing_mark = existing_marks.get((s_name, exam_type))
+                new_marks_to_add.append(Mark(
+                    student_id=student.id,
+                    subject=s_name,
+                    exam_type=exam_type,
+                    score=score,
+                    max_score=max_score,
+                    semester=s_sem,
+                    entered_at=datetime.utcnow().isoformat()
+                ))
 
-                if existing_mark:
-                    existing_mark.score = score
-                    existing_mark.max_score = max_score
-                    existing_mark.semester = s_sem
-                    existing_mark.entered_at = datetime.utcnow().isoformat()
-                else:
-                    new_mark = Mark(
-                        student_id=student.id,
-                        subject=s_name,
-                        exam_type=exam_type,
-                        score=score,
-                        max_score=max_score,
-                        semester=s_sem,
-                        entered_at=datetime.utcnow().isoformat()
-                    )
-                    db.session.add(new_mark)
-                    existing_marks[(s_name, exam_type)] = new_mark
+    if new_marks_to_add:
+        db.session.add_all(new_marks_to_add)
 
     # Save student's active enrolled subjects from Padikkunnundo
     student.enrolled_subjects = json.dumps(enrolled_list)
-
-    # Clean up any marks for this semester that are no longer in the student's enrolled subjects
-    if enrolled_subject_names:
-        Mark.query.filter(
-            Mark.student_id == student.id,
-            Mark.semester == semester,
-            ~Mark.subject.in_(enrolled_subject_names)
-        ).delete(synchronize_session=False)
 
     db.session.commit()
 

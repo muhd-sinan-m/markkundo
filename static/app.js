@@ -40,7 +40,7 @@ let cachedExamsData = {};
 // 1. Fetch Subjects from DB and populate Subject Dropdown
 async function loadStudentSubjects() {
   try {
-    const res = await fetch('/api/student/subjects');
+    const res = await fetch('/api/student/subjects', { cache: 'no-store' });
     if (!res.ok) return;
     const subjects = await res.json();
     
@@ -62,7 +62,7 @@ async function loadStudentSubjects() {
 // 2. Fetch Exams and performance data
 async function loadExamsData() {
   try {
-    const res = await fetch('/api/student/exams');
+    const res = await fetch('/api/student/exams', { cache: 'no-store' });
     if (!res.ok) return;
     cachedExamsData = await res.json();
     
