@@ -465,11 +465,18 @@ async function loadPrioritySchedule() {
 
       Object.keys(examsData).forEach(examKey => {
         const exam = examsData[examKey];
-        if (exam && exam.marks) {
-          const m = exam.marks.find(item => item.subject && item.subject.toLowerCase() === s.name.toLowerCase());
+        if (exam && exam.marks && Array.isArray(exam.marks)) {
+          const m = exam.marks.find(item => {
+            if (!item || !item.subject) return false;
+            const sub1 = item.subject.trim().toLowerCase();
+            const sub2 = s.name.trim().toLowerCase();
+            return sub1 === sub2 || sub1.startsWith(sub2) || sub2.startsWith(sub1);
+          });
           if (m && m.score !== null && m.score !== undefined && !isNaN(Number(m.score))) {
-            totalScore += Number(m.score);
-            totalMax += Number(m.max) || 100;
+            const scoreNum = Number(m.score);
+            const maxNum = Number(m.max || m.max_score) || 100;
+            totalScore += scoreNum;
+            totalMax += maxNum;
             markCount++;
           }
         }
@@ -483,7 +490,7 @@ async function loadPrioritySchedule() {
       let priority = 'STABLE MASTERY';
       let badgeClass = 'badge-success';
       let borderLeftColor = 'var(--emerald)';
-      let rankOrder = 4;
+      let rankOrder = 5;
       let explanation = '';
       let scoreBadgeHtml = '';
 
@@ -491,7 +498,7 @@ async function loadPrioritySchedule() {
         priority = 'NO MARKS ENTERED';
         badgeClass = 'badge-warning';
         borderLeftColor = 'var(--amber)';
-        rankOrder = 3;
+        rankOrder = 4;
         explanation = `No evaluation marks entered yet for ${s.name}. Enter marks in Padikkunnundo to activate personalized SEA2 recommendations.`;
         scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--amber); font-weight: 600;">Status: Enter marks in Padikkunnundo</span>`;
       } else if (avgPct < 40) {
@@ -512,7 +519,7 @@ async function loadPrioritySchedule() {
         priority = 'MODERATE PRIORITY';
         badgeClass = 'badge-warning';
         borderLeftColor = 'var(--amber)';
-        rankOrder = 4;
+        rankOrder = 3;
         explanation = `Current evaluation aggregate is ${avgPct}%. Maintaining structured weekly study sessions will help elevate performance above the cohort benchmark in SEA2.`;
         scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--amber); font-weight: 600;">Score: ${avgPct}% (Developing)</span>`;
       } else {
@@ -540,11 +547,11 @@ async function loadPrioritySchedule() {
       };
     });
 
-    // Sort: Lowest score / highest priority first
+    // Sort: Lowest score / highest priority first, high mastery at the bottom
     subjectItems.sort((a, b) => {
       if (a.rankOrder !== b.rankOrder) return a.rankOrder - b.rankOrder;
       if (a.avgPct !== null && b.avgPct !== null) return a.avgPct - b.avgPct;
-      return 0;
+      return a.name.localeCompare(b.name);
     });
 
     container.innerHTML = subjectItems.map(item => `

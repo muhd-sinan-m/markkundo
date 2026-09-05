@@ -236,60 +236,69 @@ def get_insights(exam_type):
 @bp.route('/api/student/class-rank/<exam_type>')
 @login_required
 def get_class_rank(exam_type):
-    """Get student's class rank for an exam strictly within their semester cohort"""
-    from sqlalchemy import func
+    """Get student's class rank and percentages for an exam strictly within their semester cohort (scaled out of 100%)"""
     student = get_or_create_student()
     subject = request.args.get('subject', default=None, type=str)
 
-    # 1. Calculate student's average for this exam in their active semester
-    q = db.session.query(func.avg(Mark.score)).filter(
-        Mark.student_id == student.id,
-        Mark.semester == student.semester,
-        Mark.exam_type == exam_type
+    # 1. Calculate student's percentage (0-100%) for this exam in their active semester
+    marks_q = Mark.query.filter_by(
+        student_id=student.id,
+        semester=student.semester,
+        exam_type=exam_type
     )
     if subject:
-        q = q.filter(Mark.subject == subject)
-    student_avg_res = q.scalar()
+        marks_q = marks_q.filter_by(subject=subject)
+    student_marks = marks_q.all()
 
-    if student_avg_res is None:
-        return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': None, 'class_avg': 0})
+    if not student_marks:
+        return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': None, 'class_avg': None})
 
-    student_avg = float(student_avg_res)
+    tot_score = sum(m.score for m in student_marks if m.score is not None)
+    tot_max = sum(m.max_score for m in student_marks if m.score is not None and m.max_score and m.max_score > 0)
+    student_pct = round((tot_score / tot_max * 100), 1) if tot_max > 0 else 0.0
 
-    # 2. Get all students' averages strictly in the SAME semester
-    rank_query = db.session.query(
-        Mark.student_id,
-        func.avg(Mark.score).label('avg_score')
-    ).filter(
-        Mark.semester == student.semester,
-        Mark.exam_type == exam_type
+    # 2. Get all students' percentages strictly in the SAME semester
+    all_q = Mark.query.filter_by(
+        semester=student.semester,
+        exam_type=exam_type
     )
-
     if subject:
-        rank_query = rank_query.filter(Mark.subject == subject)
+        all_q = all_q.filter_by(subject=subject)
+    all_marks = all_q.all()
 
-    rankings = rank_query.group_by(Mark.student_id).all()
+    from collections import defaultdict
+    student_totals = defaultdict(lambda: {'score': 0.0, 'max': 0.0})
+    for m in all_marks:
+        if m.score is not None and m.max_score and m.max_score > 0:
+            student_totals[m.student_id]['score'] += m.score
+            student_totals[m.student_id]['max'] += m.max_score
+
+    rankings = []
+    for sid, data in student_totals.items():
+        if data['max'] > 0:
+            pct = round((data['score'] / data['max']) * 100, 1)
+            rankings.append((sid, pct))
 
     if not rankings:
         return jsonify({
             'rank': 1,
             'percentile': 100,
             'total': 1,
-            'student_avg': round(student_avg, 1),
-            'class_avg': round(student_avg, 1)
+            'student_avg': student_pct,
+            'class_avg': student_pct
         })
 
     # Sort rankings in descending order
-    rankings_sorted = sorted(rankings, key=lambda x: float(x[1]), reverse=True)
+    rankings_sorted = sorted(rankings, key=lambda x: x[1], reverse=True)
     rank = next((i + 1 for i, (sid, _) in enumerate(rankings_sorted) if sid == student.id), 1)
     total = len(rankings_sorted)
     percentile = round(((total - rank + 1) / total) * 100, 1) if total > 0 else 100
-    class_avg = round(sum(float(r[1]) for r in rankings_sorted) / total, 1) if total > 0 else round(student_avg, 1)
+    class_avg = round(sum(r[1] for r in rankings_sorted) / total, 1) if total > 0 else student_pct
 
     return jsonify({
         'rank': rank,
         'percentile': percentile,
         'total': total,
-        'student_avg': round(student_avg, 1),
+        'student_avg': student_pct,
         'class_avg': class_avg
     })

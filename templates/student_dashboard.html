@@ -95,12 +95,6 @@
             <div class="pill-chip">
               <span id="dateDisplay">{{ student.course or 'BCA' }} · Semester {{ student.semester if student else 1 }}</span>
             </div>
-            <div class="btn-gradient">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-              Active Enrollment
-            </div>
           </div>
         </div>
 
@@ -113,17 +107,6 @@
               <!-- Logo Showcase -->
               <div class="student-hero-banner">
                 <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo academic intelligence" class="student-hero-logo" />
-              </div>
-
-              <div class="student-hero-header">
-                <div class="student-hero-avatar">
-                  {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
-                </div>
-                <div class="student-hero-meta">
-                  <h2>{{ student.name if student else 'Student' }}</h2>
-                  <p>{{ student.college or 'Marian College Kuttikkanam' }}</p>
-                  <p style="color: var(--primary); font-weight: 600;">{{ student.course or 'BCA' }} — Semester {{ student.semester if student else 1 }}</p>
-                </div>
               </div>
 
               <!-- Overall Score Box -->
@@ -146,13 +129,6 @@
                 <div class="readiness-track">
                   <div class="readiness-bar" id="readinessProgressBar" style="width: 75%;"></div>
                 </div>
-              </div>
-
-              <div class="ml-status-badge">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-                <span>ML Academic Engine Connected</span>
               </div>
             </div>
           </div>
@@ -188,17 +164,17 @@
                 <div class="metric-tile">
                   <div class="metric-tile-label">Your Score</div>
                   <div class="metric-tile-value" style="color: var(--primary);" id="avgScoreVal">—</div>
-                  <div class="metric-tile-sub">Your average in this exam</div>
+                  <div class="metric-tile-sub">Your score percentage (scaled out of 100%)</div>
                 </div>
                 <div class="metric-tile">
                   <div class="metric-tile-label">Class Average</div>
                   <div class="metric-tile-value" id="classScoreVal">—</div>
-                  <div class="metric-tile-sub">Average mark of your class</div>
+                  <div class="metric-tile-sub">Overall class average (out of 100%)</div>
                 </div>
                 <div class="metric-tile">
                   <div class="metric-tile-label">Vs Class Average</div>
                   <div class="metric-tile-value" id="improvementVal">—</div>
-                  <div class="metric-tile-sub">Difference from class average</div>
+                  <div class="metric-tile-sub">Performance variance vs class average</div>
                 </div>
               </div>
             </div>
