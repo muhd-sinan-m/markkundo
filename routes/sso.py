@@ -21,12 +21,18 @@ def is_admin_email(email):
 
 
 def update_student_ml_insights(student_id):
-    """Generate or update ML insights for a student based on current DB marks in batch"""
+    """Generate or update ML insights for a student based on current DB marks in batch (scoped to semester)"""
     try:
+        student = Student.query.get(student_id)
+        if not student:
+            return
+
         exams = ['ISA', 'LB', 'LD', 'CP', 'SEA1']
         
-        # Batch preload all marks for this student
-        all_student_marks = Mark.query.filter_by(student_id=student_id).all()
+        # Batch preload all marks for this student in their active semester
+        all_student_marks = Mark.query.filter_by(student_id=student_id, semester=student.semester).all()
+        if not all_student_marks:
+            all_student_marks = Mark.query.filter_by(student_id=student_id).all()
         if not all_student_marks:
             return
 
@@ -54,8 +60,8 @@ def update_student_ml_insights(student_id):
 
             weak_subjects, recommendation = StudyFocusRecommender.analyze(marks_list)
 
-            # Performance cluster
-            all_marks = Mark.query.filter_by(exam_type=exam).all()
+            # Performance cluster scoped to same semester peers
+            all_marks = Mark.query.filter_by(semester=student.semester, exam_type=exam).all()
             if len(all_marks) >= 3:
                 all_marks_list = [{
                     'student_id': m.student_id,

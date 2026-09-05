@@ -153,9 +153,10 @@ def get_insights(exam_type):
         'subject': m.subject,
         'score': m.score,
         'max_score': m.max_score
-    } for m in Mark.query.filter_by(student_id=student.id, exam_type=exam_type).all()]
+    } for m in Mark.query.filter_by(student_id=student.id, semester=student.semester, exam_type=exam_type).all()]
 
-    all_exam_marks = Mark.query.filter_by(exam_type=exam_type).all()
+    # Scoped strictly to the student's active semester cohort
+    all_exam_marks = Mark.query.filter_by(semester=student.semester, exam_type=exam_type).all()
     all_marks_list = [{
         'student_id': m.student_id,
         'subject': m.subject,
@@ -235,14 +236,15 @@ def get_insights(exam_type):
 @bp.route('/api/student/class-rank/<exam_type>')
 @login_required
 def get_class_rank(exam_type):
-    """Get student's class rank for an exam from DB using optimized single-query aggregation"""
+    """Get student's class rank for an exam strictly within their semester cohort"""
     from sqlalchemy import func
     student = get_or_create_student()
     subject = request.args.get('subject', default=None, type=str)
 
-    # 1. Calculate student's average for this exam in a single query
+    # 1. Calculate student's average for this exam in their active semester
     q = db.session.query(func.avg(Mark.score)).filter(
         Mark.student_id == student.id,
+        Mark.semester == student.semester,
         Mark.exam_type == exam_type
     )
     if subject:
@@ -254,11 +256,14 @@ def get_class_rank(exam_type):
 
     student_avg = float(student_avg_res)
 
-    # 2. Get all students' averages for this exam in a single GROUP BY query (eliminating N+1)
+    # 2. Get all students' averages strictly in the SAME semester
     rank_query = db.session.query(
         Mark.student_id,
         func.avg(Mark.score).label('avg_score')
-    ).filter(Mark.exam_type == exam_type)
+    ).filter(
+        Mark.semester == student.semester,
+        Mark.exam_type == exam_type
+    )
 
     if subject:
         rank_query = rank_query.filter(Mark.subject == subject)
