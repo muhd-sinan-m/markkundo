@@ -264,9 +264,13 @@ def sso_login():
     # 5. Compute ML Insights
     update_student_ml_insights(student.id)
 
-    # 6. Log User in
-    login_user(user, remember=True)
+    # 6. Log User in with SSO session flag
+    session['sso_authenticated'] = True
+    session['sso_email'] = email
+    session['sso_login_time'] = datetime.utcnow().timestamp()
+    login_user(user, remember=False)
     current_app.logger.info(f"SSO login success for {email} (role: {user.role}, semester: {semester})")
+
 
     # 7. Redirect with target subject if specified
     if is_admin and not request.args.get('as_student'):

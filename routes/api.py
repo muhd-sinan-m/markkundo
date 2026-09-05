@@ -31,20 +31,26 @@ def get_or_create_student():
 
 @bp.route('/')
 def index():
-    """Root route — redirects authenticated users to their dashboard, otherwise SSO landing"""
-    if current_user.is_authenticated:
+    """Root route — redirects authenticated SSO users to their dashboard, otherwise SSO landing"""
+    if current_user.is_authenticated and session.get('sso_authenticated'):
         if current_user.role == 'admin':
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('api.student_dashboard'))
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('auth.login', error='sso_required'))
 
 @bp.route('/dashboard')
 @login_required
 def student_dashboard():
     """Student dashboard view populated with student and DB info"""
+    if not session.get('sso_authenticated'):
+        from flask_login import logout_user
+        logout_user()
+        session.clear()
+        return redirect(url_for('auth.login', error='sso_required'))
     student = get_or_create_student()
     target_subject = request.args.get('subject') or session.get('target_subject', '')
     return render_template('student_dashboard.html', student=student, user=current_user, target_subject=target_subject)
+
 
 @bp.route('/api/student/profile')
 @login_required

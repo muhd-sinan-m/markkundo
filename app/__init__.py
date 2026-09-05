@@ -40,7 +40,7 @@ def create_app():
         'pool_pre_ping': True,
     }
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-markkundo')
-    app.config['PERMANENT_SESSION_LIFETIME'] = 2592000  # 30 days
+    app.config['PERMANENT_SESSION_LIFETIME'] = 7200  # 2 hours max
 
     # ── Extensions ─────────────────────────────────────────────────────────────
     db.init_app(app)
@@ -59,6 +59,37 @@ def create_app():
         return redirect(url_for('auth.login', error='sso_required'))
 
     limiter.init_app(app)
+
+    # ── Strict SSO Session Verification on Every Request ───────────────────────
+    @app.before_request
+    def check_sso_session():
+        from flask import session, request, redirect, url_for, jsonify
+        from flask_login import current_user, logout_user
+
+        # Whitelist static assets and auth endpoints
+        endpoint = request.endpoint or ''
+        if endpoint.startswith('static') or endpoint in [
+            'auth.login', 'auth.logout', 'sso.sso_login', 'sso.generate_sso_token'
+        ]:
+            return
+
+        # If user is marked authenticated by Flask-Login but lacks verified SSO session, invalidate immediately
+        if current_user.is_authenticated:
+            if not session.get('sso_authenticated'):
+                logout_user()
+                session.clear()
+                if request.is_json or request.path.startswith('/api/') or request.path.startswith('/admin/api/'):
+                    return jsonify({
+                        'error': 'Unauthorized — Single Sign-On (SSO) via Padikkunnundo is required.',
+                        'code': 401,
+                        'sso_required': True
+                    }), 401
+                return redirect(url_for('auth.login', error='sso_required'))
+        else:
+            # Unauthenticated user visiting protected areas
+            if request.path == '/' or request.path.startswith('/dashboard') or request.path.startswith('/admin'):
+                return redirect(url_for('auth.login', error='sso_required'))
+
 
 
     # ── Security headers on every response ─────────────────────────────────────

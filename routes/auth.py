@@ -8,13 +8,17 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     """
     SSO Portal Landing & Auth Notice.
-    If already logged in, redirects directly to user dashboard.
+    If already logged in via verified SSO, redirects directly to user dashboard.
     Otherwise shows SSO information and redirection back to Padikkunnundo.
     """
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and session.get('sso_authenticated'):
         if current_user.role == 'admin':
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('api.student_dashboard'))
+    elif current_user.is_authenticated:
+        logout_user()
+        session.clear()
+
     
     error_code = request.args.get('error')
     message_code = request.args.get('message')
