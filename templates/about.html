@@ -165,15 +165,15 @@
       background: linear-gradient(90deg, #4f46e5 0%, #6366f1 60%, #0284c7 100%);
     }
 
-    .dev-card-inner {
+    .dev-header {
       display: flex;
-      gap: 20px;
-      align-items: flex-start;
+      align-items: center;
+      gap: 16px;
       margin-bottom: 16px;
     }
 
     @media (max-width: 540px) {
-      .dev-card-inner {
+      .dev-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
@@ -181,21 +181,28 @@
     }
 
     .dev-avatar {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
       object-fit: cover;
+      object-position: center 20%;
       display: block;
-      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.25);
-      border: 3px solid #ffffff;
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.22);
+      border: 2.5px solid #ffffff;
+      outline: 1.5px solid rgba(79, 70, 229, 0.2);
       flex-shrink: 0;
+    }
+
+    .dev-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .dev-name-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 4px;
       flex-wrap: wrap;
     }
 
@@ -226,11 +233,40 @@
       color: var(--primary);
     }
 
+    .dev-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
     .dev-bio {
       font-size: 13.5px;
       color: var(--text-body);
       line-height: 1.6;
-      margin-top: 8px;
+      margin-bottom: 14px;
+    }
+
+    .dev-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dev-list-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-body);
+      font-weight: 500;
+    }
+
+    .dev-list-item svg {
+      color: var(--primary);
+      flex-shrink: 0;
     }
 
     .dev-tags {
@@ -336,6 +372,20 @@
       flex-shrink: 0;
     }
 
+    .top-nav a,
+    .nav-tab,
+    .nav-logo,
+    .nav-tabs a {
+      text-decoration: none !important;
+    }
+
+    .top-nav a:hover,
+    .nav-tab:hover,
+    .nav-logo:hover,
+    .nav-tabs a:hover {
+      text-decoration: none !important;
+    }
+
     .eco-action-btn {
       display: inline-flex;
       align-items: center;
@@ -344,20 +394,22 @@
       width: 100%;
       padding: 11px 18px;
       background: var(--primary);
-      color: #ffffff;
+      color: #ffffff !important;
       border-radius: var(--radius-md);
       font-family: var(--font-display);
       font-size: 13.5px;
       font-weight: 700;
-      text-decoration: none;
+      text-decoration: none !important;
       transition: var(--transition);
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
     }
 
     .eco-action-btn:hover {
-      background: var(--primary-hover);
+      background: var(--primary-dark, #4338ca);
+      color: #ffffff !important;
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+      text-decoration: none !important;
     }
   </style>
 </head>
@@ -497,9 +549,9 @@
         <!-- Developer Spotlight Card -->
         <div class="dev-card">
           <div>
-            <div class="dev-card-inner">
+            <div class="dev-header">
               <img src="{{ url_for('static', filename='img/akshara.webp') }}" alt="Akshara Suresh" class="dev-avatar" />
-              <div style="flex: 1;">
+              <div class="dev-header-text">
                 <div class="dev-name-row">
                   <span class="dev-name">Akshara Suresh</span>
                   <span class="dev-role-badge">
@@ -510,11 +562,34 @@
                     ML Analytics & Performance
                   </span>
                 </div>
-                <p class="dev-bio">
-                  Implemented academic data analytics tools using regression models for predicting student marks trends, clustering algorithms (K-Means) for grouping performance profiles, and classification models to identify students who need proactive support.
-                </p>
+                <span class="dev-subtitle">Academic Intelligence & Machine Learning</span>
               </div>
             </div>
+
+            <p class="dev-bio">
+              Implemented academic data analytics tools using regression models for predicting student marks trends, clustering algorithms (K-Means) for grouping performance profiles, and classification models to identify students who need proactive support.
+            </p>
+
+            <ul class="dev-list">
+              <li class="dev-list-item">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Predictive regression models for marks trajectory</span>
+              </li>
+              <li class="dev-list-item">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Unsupervised K-Means clustering & student segmentation</span>
+              </li>
+              <li class="dev-list-item">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Proactive classification for student academic support</span>
+              </li>
+            </ul>
           </div>
           <div class="dev-tags">
             <span class="dev-tag">Regression Models</span>

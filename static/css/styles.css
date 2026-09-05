@@ -21,6 +21,7 @@
   --primary: #4f46e5;
   --primary-light: #6366f1;
   --primary-dark: #4338ca;
+  --primary-hover: #4338ca;
   --primary-subtle: #eef2ff;
   --primary-glow: rgba(79, 70, 229, 0.15);
   
@@ -91,6 +92,15 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover, a:focus, a:active {
+  text-decoration: none;
 }
 
 html {
