@@ -14,24 +14,30 @@ class StudyFocusRecommender:
         Returns list of weak subjects ranked by severity
         """
         if not marks_data:
-            return [], "No data available"
+            return [], "No assessment marks entered yet. Enter marks in Padikkunnundo to activate subject recommendations."
         
-        df = pd.DataFrame(marks_data)
+        # Filter valid records with positive max_score
+        valid_marks = [m for m in marks_data if m.get('max_score', 0) > 0 and m.get('score') is not None]
+        if not valid_marks:
+            return [], "No assessment marks entered yet. Enter marks in Padikkunnundo to activate subject recommendations."
+
+        df = pd.DataFrame(valid_marks)
+        df['score_pct'] = ((df['score'] / df['max_score']) * 100).clip(lower=0.0, upper=100.0)
         
-        # Calculate student score percentage per subject
-        df['score_pct'] = (df['score'] / df['max_score']) * 100
+        overall_avg = float(df['score_pct'].mean())
         
         # Calculate class average per subject
         class_avg = df.groupby('subject')['score_pct'].mean()
         
-        # Find weak subjects (>15% below class average)
+        # Find weak subjects (< 50% or > 15% below class average)
         weak_subjects = []
         for subject in df['subject'].unique():
-            student_avg = df[df['subject'] == subject]['score_pct'].mean()
-            class_avg_subj = class_avg.get(subject, 0)
+            subj_rows = df[df['subject'] == subject]
+            student_avg = float(subj_rows['score_pct'].mean())
+            class_avg_subj = float(class_avg.get(subject, student_avg))
             gap = class_avg_subj - student_avg
             
-            if gap > 15:
+            if gap > 12 or student_avg < 50.0:
                 weak_subjects.append({
                     'subject': subject,
                     'gap': gap,
@@ -39,15 +45,20 @@ class StudyFocusRecommender:
                     'class_avg': class_avg_subj
                 })
         
-        # Sort by severity
-        weak_subjects.sort(key=lambda x: x['gap'], reverse=True)
+        # Sort by lowest score and highest gap
+        weak_subjects.sort(key=lambda x: (x['student_score'], -x['gap']))
         subject_names = [s['subject'] for s in weak_subjects]
         
         if weak_subjects:
             top_weak = weak_subjects[0]
-            recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}% vs class average {top_weak['class_avg']:.0f}%. We recommend focusing on this subject before your next assessment."
+            if top_weak['class_avg'] > top_weak['student_score']:
+                recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}% vs class average {top_weak['class_avg']:.0f}%. We recommend dedicating extra review time to this subject before SEA2."
+            else:
+                recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}%. Additional practice on foundational problem sets will help secure higher marks in SEA2."
+        elif overall_avg >= 75.0:
+            recommendation = "Great job! Your performance is strong across all enrolled subjects. Maintain regular revision to sustain high mastery."
         else:
-            recommendation = "Great job! Your performance is above class average across all subjects. Keep up the momentum!"
+            recommendation = "Performance is steady. Consistent weekly practice across all subjects will help push your scores into top percentile."
         
         return subject_names, recommendation
 
@@ -61,36 +72,36 @@ class PerformanceClusterer:
         Features: average score %, score standard deviation, improvement trend
         Returns: cluster assignments (Topper, Average, At-Risk)
         """
-        if len(marks_data_all) < 3:
-            # Not enough data for clustering
+        valid_data = [m for m in marks_data_all if m.get('max_score', 0) > 0 and m.get('score') is not None]
+        if len(valid_data) < 3:
             return {i: 'Average' for i in range(len(marks_data_all))}
         
-        df = pd.DataFrame(marks_data_all)
+        df = pd.DataFrame(valid_data)
         
         # Calculate features for each student
         student_features = []
         student_ids = []
         
         for student_id in df['student_id'].unique():
-            student_marks = df[df['student_id'] == student_id]
+            student_marks = df[df['student_id'] == student_id].copy()
             
-            # Feature 1: Average score percentage
-            student_marks['score_pct'] = (student_marks['score'] / student_marks['max_score']) * 100
-            avg_score = student_marks['score_pct'].mean()
+            # Feature 1: Average score percentage (bounded 0-100)
+            student_marks['score_pct'] = ((student_marks['score'] / student_marks['max_score']) * 100).clip(lower=0.0, upper=100.0)
+            avg_score = float(student_marks['score_pct'].mean())
             
             # Feature 2: Score standard deviation (consistency)
-            std_dev = student_marks['score_pct'].std() or 0
+            std_dev = float(student_marks['score_pct'].std() or 0)
             
             # Feature 3: Improvement trend (difference between last and first exam)
             if len(student_marks) > 1:
-                improvement = student_marks['score_pct'].iloc[-1] - student_marks['score_pct'].iloc[0]
+                improvement = float(student_marks['score_pct'].iloc[-1] - student_marks['score_pct'].iloc[0])
             else:
-                improvement = 0
+                improvement = 0.0
             
             student_features.append([avg_score, std_dev, improvement])
             student_ids.append(student_id)
         
-        if not student_features:
+        if not student_features or len(student_features) < 3:
             return {}
         
         # Normalize features
@@ -108,63 +119,51 @@ class PerformanceClusterer:
             cluster_means.append((i, cluster_avg))
         
         cluster_means.sort(key=lambda x: x[1])
-        cluster_map = {
+        cluster_labels = {
             cluster_means[0][0]: 'At-Risk',
             cluster_means[1][0]: 'Average',
             cluster_means[2][0]: 'Topper'
         }
         
-        result = {}
-        for student_id, cluster in zip(student_ids, clusters):
-            result[student_id] = cluster_map[cluster]
-        
-        return result
+        return {student_ids[i]: cluster_labels[clusters[i]] for i in range(len(student_ids))}
 
 class AnomalyDetector:
-    """ML Module 3: Anomaly Detector using Z-Score"""
+    """ML Module 3: Anomaly Detection using Z-Score"""
     
     @staticmethod
-    def detect_anomalies(marks_data):
+    def detect_anomalies(student_marks_history, threshold=2.0):
         """
-        Algorithm: Z-Score statistical anomaly detection
-        Z-score < -2.0: critical anomaly
-        Z-score -1.5 to -2.0: warning anomaly
+        Algorithm: Z-Score Outlier Detection
+        Detects sudden drops or spikes in student performance
         """
-        if len(marks_data) < 2:
+        valid_history = [m for m in student_marks_history if m.get('max_score', 0) > 0 and m.get('score') is not None]
+        if len(valid_history) < 3:
             return []
         
-        df = pd.DataFrame(marks_data)
-        anomalies = []
+        df = pd.DataFrame(valid_history)
+        df['score_pct'] = ((df['score'] / df['max_score']) * 100).clip(lower=0.0, upper=100.0)
         
-        for subject in df['subject'].unique():
-            subject_data = df[df['subject'] == subject]
-            scores = subject_data['score'].values
+        scores = df['score_pct'].values
+        mean = np.mean(scores)
+        std = np.std(scores)
+        
+        if std == 0:
+            return []
+        
+        anomalies = []
+        for i, row in df.iterrows():
+            z_score = (row['score_pct'] - mean) / std
             
-            if len(scores) < 2:
-                continue
-            
-            # Calculate z-scores
-            mean_score = np.mean(scores)
-            std_score = np.std(scores)
-            
-            if std_score == 0:
-                continue
-            
-            z_score = (scores[-1] - mean_score) / std_score
-            
-            if z_score < -2.0:
+            if abs(z_score) > threshold:
+                anomaly_type = 'drop' if z_score < 0 else 'spike'
                 anomalies.append({
-                    'subject': subject,
-                    'risk_level': 'critical',
+                    'exam_type': row.get('exam_type', 'Unknown'),
+                    'subject': row['subject'],
+                    'score': row['score'],
+                    'score_pct': row['score_pct'],
                     'z_score': z_score,
-                    'message': f"Significant drop in {subject} marks detected. You're performing notably below your average. Consider reaching out to faculty for support."
-                })
-            elif z_score < -1.5:
-                anomalies.append({
-                    'subject': subject,
-                    'risk_level': 'warning',
-                    'z_score': z_score,
-                    'message': f"Notable drop in {subject} marks compared to your previous performance. Consider reviewing the concepts."
+                    'type': anomaly_type,
+                    'message': f"Significant performance {anomaly_type} in {row['subject']}: {row['score_pct']:.1f}% (Z-Score: {z_score:.2f})"
                 })
         
         return sorted(anomalies, key=lambda x: x['z_score'])
@@ -172,7 +171,7 @@ class AnomalyDetector:
 
 class ExamDifficultyAnalyzer:
     """
-    ML Module 4: Exam Difficulty & Cohort Context Analyzer
+    ML Module 4: Exam Difficulty & Class Context Analyzer
     Evaluates paper difficulty based on total class performance distribution,
     and provides empathetic, calm, and constructive feedback.
     """
@@ -183,33 +182,38 @@ class ExamDifficultyAnalyzer:
         - student_marks_data: list of marks dicts for the specific student
         - selected_subject: optional subject filter
         """
-        if not all_marks_data:
+        valid_all = [m for m in (all_marks_data or []) if m.get('max_score', 0) > 0 and m.get('score') is not None]
+        valid_stu = [m for m in (student_marks_data or []) if m.get('max_score', 0) > 0 and m.get('score') is not None]
+
+        if not valid_all:
             return {
-                'difficulty': 'Moderate',
+                'difficulty': 'Pending Data',
                 'difficulty_level': 'moderate',
-                'class_avg_pct': 0,
+                'class_avg_pct': None,
+                'student_avg_pct': None,
                 'high_score_ratio': 0,
-                'interpretation': 'Standard assessment difficulty.'
+                'interpretation': 'No marks entered yet for this assessment. Enter marks in Padikkunnundo to calculate class performance benchmarks.'
             }
 
-        df_all = pd.DataFrame(all_marks_data)
+        df_all = pd.DataFrame(valid_all)
         if selected_subject:
-            df_all = df_all[df_all['subject'] == selected_subject]
+            df_all = df_all[df_all['subject'].str.lower() == selected_subject.lower()]
 
         if df_all.empty:
             return {
-                'difficulty': 'Moderate',
+                'difficulty': 'Pending Data',
                 'difficulty_level': 'moderate',
-                'class_avg_pct': 0,
+                'class_avg_pct': None,
+                'student_avg_pct': None,
                 'high_score_ratio': 0,
-                'interpretation': 'Standard assessment difficulty.'
+                'interpretation': f'No marks entered yet for {selected_subject or "this assessment"}. Enter marks in Padikkunnundo to calculate benchmarks.'
             }
 
-        df_all['score_pct'] = (df_all['score'] / df_all['max_score']) * 100
+        df_all['score_pct'] = ((df_all['score'] / df_all['max_score']) * 100).clip(lower=0.0, upper=100.0)
         class_avg_pct = float(df_all['score_pct'].mean())
         
         # Ratio of students scoring >= 80% (equivalent to >8 out of 10)
-        high_scorers = len(df_all[df_all['score_pct'] >= 80])
+        high_scorers = len(df_all[df_all['score_pct'] >= 80.0])
         high_score_ratio = (high_scorers / len(df_all)) if len(df_all) > 0 else 0
 
         # Classify difficulty based on overall class average
@@ -227,49 +231,48 @@ class ExamDifficultyAnalyzer:
         student_avg_pct = None
         interpretation = ""
 
-        if student_marks_data:
-            df_stu = pd.DataFrame(student_marks_data)
+        if valid_stu:
+            df_stu = pd.DataFrame(valid_stu)
             if selected_subject:
-                df_stu = df_stu[df_stu['subject'] == selected_subject]
+                df_stu = df_stu[df_stu['subject'].str.lower() == selected_subject.lower()]
             
             if not df_stu.empty:
-                df_stu['score_pct'] = (df_stu['score'] / df_stu['max_score']) * 100
+                df_stu['score_pct'] = ((df_stu['score'] / df_stu['max_score']) * 100).clip(lower=0.0, upper=100.0)
                 student_avg_pct = float(df_stu['score_pct'].mean())
 
-                # Special scenario:
-                # Many students scored >80% (>8/10), but student scored <=35% (e.g., 3/10)
                 if (high_score_ratio >= 0.35 or class_avg_pct >= 70.0) and student_avg_pct <= 40.0:
                     interpretation = (
-                        f"The class performed strongly in this assessment (Class Avg: {class_avg_pct:.0f}%, with many students scoring above 80%). "
-                        f"Your score was {student_avg_pct:.0f}%. While this shows a gap in preparation for this specific test, "
-                        f"take a deep breath—everyone encounters setbacks from time to time! Don't be discouraged at all. "
-                        f"With calm, focused practice on the core concepts and revising previous papers, you can easily turn this around and excel in the next assessment. "
-                        f"We believe in your potential!"
+                        f"The class scored an average of {class_avg_pct:.0f}% in this assessment. "
+                        f"Your score was {student_avg_pct:.0f}%. Focus on the core foundational topics before your next assessment—"
+                        f"with regular problem solving, you can quickly bridge the gap!"
                     )
                 elif difficulty_level == "hard" and student_avg_pct <= 45.0:
                     interpretation = (
-                        f"This assessment was particularly tough across the entire cohort (Class Avg: {class_avg_pct:.0f}%). "
-                        f"Your score of {student_avg_pct:.0f}% reflects the high difficulty level of the paper. "
-                        f"Stay positive, practice key problem types, and you will see strong progress."
+                        f"This assessment was challenging across the class (Class Avg: {class_avg_pct:.0f}%). "
+                        f"Your score of {student_avg_pct:.0f}% reflects the difficulty level of the paper. "
+                        f"Stay focused and practice previous question papers to build confidence."
                     )
                 elif student_avg_pct >= 80.0:
                     interpretation = (
-                        f"Outstanding achievement! You scored an impressive {student_avg_pct:.0f}% "
+                        f"Outstanding performance! You scored {student_avg_pct:.0f}% "
                         f"(Class Avg: {class_avg_pct:.0f}%). Keep up the great work and maintain this momentum!"
                     )
                 elif student_avg_pct >= class_avg_pct:
                     interpretation = (
-                        f"Well done! You are performing comfortably above the class average ({student_avg_pct:.0f}% vs {class_avg_pct:.0f}%). "
-                        f"Keep practicing regularly to secure high grades."
+                        f"Well done! You are performing above the class average ({student_avg_pct:.0f}% vs {class_avg_pct:.0f}%). "
+                        f"Keep practicing regularly to secure top grades."
                     )
                 else:
                     interpretation = (
-                        f"Your score of {student_avg_pct:.0f}% is close to the class average ({class_avg_pct:.0f}%). "
-                        f"A little dedicated review before the next test will help you push into the top tier."
+                        f"Your score of {student_avg_pct:.0f}% is near the class average ({class_avg_pct:.0f}%). "
+                        f"A little dedicated revision before the next assessment will help you push into the top tier."
                     )
 
         if not interpretation:
-            interpretation = f"Overall class average is {class_avg_pct:.0f}%, indicating a {difficulty.lower()} assessment level."
+            if not valid_stu:
+                interpretation = f"Class average is {class_avg_pct:.0f}%. Enter your marks in Padikkunnundo to compare your performance and get tailored guidance."
+            else:
+                interpretation = f"Overall class average is {class_avg_pct:.0f}%, indicating a {difficulty.lower()} assessment level."
 
         return {
             'difficulty': difficulty,
@@ -279,4 +282,3 @@ class ExamDifficultyAnalyzer:
             'high_score_ratio': round(high_score_ratio, 2),
             'interpretation': interpretation
         }
-

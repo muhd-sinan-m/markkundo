@@ -363,12 +363,16 @@ async function loadSubjectInsights(examType) {
       "<strong>Targeted Review:</strong> Prioritize core chapters and difficult concepts to maximize subject performance."
     ];
 
+    let benchmarkBadgeText = (classAvgPct !== null && classAvgPct !== undefined) 
+      ? `${difficulty} Level · Class Avg: ${classAvgPct}%`
+      : 'Pending Data · Class Avg: —';
+
     let content = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Class Performance Benchmark</span>
           <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
-            ${difficulty} Level · Class Avg: ${classAvgPct}%
+            ${benchmarkBadgeText}
           </span>
         </div>
 
