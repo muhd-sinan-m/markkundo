@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>markkundo. — ML Academic Performance Intelligence</title>
+  <title>markkundo. — Academic Performance Intelligence</title>
   <meta name="description"
     content="markkundo.app is an ML-powered academic performance intelligence platform for students at Marian College Kuttikkanam." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   <script>
@@ -29,19 +29,19 @@
         <span class="nav-wordmark">markkundo<span>.</span></span>
       </a>
 
-      <!-- Centred tabs -->
+      <!-- Centred navigation tabs -->
       <div class="nav-tabs" role="tablist" aria-label="Page navigation">
         <button class="nav-tab active" id="tab-dashboard" role="tab" aria-selected="true" onclick="switchTab('exams')">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
           </svg>
           Dashboard
         </button>
         <button class="nav-tab" id="tab-schedule" role="tab" aria-selected="false" onclick="switchTab('schedule')">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <rect x="3" y="4" width="18" height="18" rx="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
@@ -58,7 +58,7 @@
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input type="text" placeholder="Search…" aria-label="Search" id="searchInput" />
+          <input type="text" placeholder="Search subjects…" aria-label="Search" id="searchInput" />
         </div>
         <button class="icon-btn" id="notifBellBtn" aria-label="Notifications" onclick="toggleNotifPanel()">
           <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -67,16 +67,16 @@
           </svg>
           <span class="notif-badge" id="notifBadge">0</span>
         </button>
-        <div class="user-avatar-area" aria-label="User menu" tabindex="0">
-          <div class="user-avatar" id="userAvatar" aria-label="Student avatar"
-            style="background: linear-gradient(135deg, var(--grad-start), var(--grad-end)); color: white; font-weight: 700;">
+        <div class="user-avatar-area" aria-label="User profile">
+          <div class="user-avatar" id="userAvatar"
+            style="background: linear-gradient(135deg, var(--grad-start), var(--grad-end));">
             {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
           </div>
           <div class="user-info">
             <span class="user-name" id="userName">{{ student.name if student else (user.name if user else 'Student') }}</span>
             <span class="user-role">{{ (student.course or 'BCA') }} · Sem {{ student.semester if student else 1 }}</span>
           </div>
-          <a href="{{ url_for('auth.logout') }}" title="Sign Out" style="margin-left: 8px; color: var(--secondary-text); display: flex; align-items: center; text-decoration: none;">
+          <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Sign Out">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
@@ -96,125 +96,151 @@
         <!-- Greeting Row -->
         <div class="greeting-row">
           <div class="greeting-left">
-            <h1>Hello <span id="greetingName">{{ (student.name.split(' ')[0] if student and student.name else (user.name.split(' ')[0] if user and user.name else 'Student')) }}</span></h1>
-            <p>You have <span id="examCount">0</span> exam assessment categories to review</p>
+            <h1>Welcome back, <span class="highlight-name" id="greetingName">{{ (student.name.split(' ')[0] if student and student.name else (user.name.split(' ')[0] if user and user.name else 'Student')) }}</span> 👋</h1>
+            <p>Tracking your active semester academic milestones across <span id="examCount" style="color: var(--cyan); font-weight: 700;">0</span> assessment categories</p>
           </div>
           <div class="greeting-right">
-            <div class="pill-chip">
-              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
+            <div class="pill-chip pulse-dot">
               <span id="dateDisplay">{{ student.course or 'BCA' }} · Semester {{ student.semester if student else 1 }}</span>
             </div>
-            <button class="btn-gradient" id="semesterBtn">
-              Semester {{ student.semester if student else 1 }}
-              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
+            <div class="btn-gradient">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-            </button>
+              Active Enrollment
+            </div>
           </div>
         </div>
 
         <!-- Body Section -->
         <div class="body-section">
 
-          <!-- Left Column (Hero) -->
+          <!-- Left Column: Student Hero Profile & Mastery -->
           <div class="column-left">
-            <div class="hero-visual-container">
-              <img class="hero-visual-img"
-                src="{{ url_for('static', filename='img/Logo.jpeg') }}"
-                alt="Performance Visualisation" />
-            </div>
-            <div class="floating-overlay-card">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <polyline
-                    points="12 2 15.09 10.26 24 10.5 17.18 16.93 19.52 25.87 12 20.13 4.48 25.87 6.82 16.93 0 10.5 8.91 10.26 12 2" />
-                </svg>
-                <span style="font-size: 12px; color: var(--secondary-text);">Overall Score</span>
-                <div style="margin-left: auto; cursor: pointer;">⋯</div>
+            <div class="student-hero-card">
+              <div class="student-hero-header">
+                <div class="student-hero-avatar">
+                  {{ (student.name[:2] if student and student.name else 'ST')).upper() }}
+                </div>
+                <div class="student-hero-meta">
+                  <h2>{{ student.name if student else 'Student' }}</h2>
+                  <p>{{ student.college or 'Marian College Kuttikkanam' }}</p>
+                  <p style="color: var(--primary-light); font-weight: 600;">{{ student.course or 'BCA' }} — Semester {{ student.semester if student else 1 }}</p>
+                </div>
               </div>
-              <div style="font-size: 28px; font-weight: 700; color: var(--data-blue); margin-bottom: 6px;"
-                id="overallScoreDisplay">0%</div>
-            </div>
 
+              <!-- Overall Score Box -->
+              <div class="overall-score-box">
+                <div>
+                  <div class="overall-score-label">Overall Mastery</div>
+                  <div class="overall-score-val" id="overallScoreDisplay">0%</div>
+                </div>
+                <div style="text-align: right;">
+                  <span class="badge badge-success" id="overallBadge">Synchronized</span>
+                </div>
+              </div>
+
+              <!-- Academic Readiness Meter -->
+              <div class="readiness-meter-container">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+                  <span>Assessment Progress</span>
+                  <span id="readinessScoreVal" style="color: var(--cyan); font-weight: 700;">Active</span>
+                </div>
+                <div class="readiness-track">
+                  <div class="readiness-bar" id="readinessProgressBar" style="width: 75%;"></div>
+                </div>
+              </div>
+
+              <div class="ml-status-badge">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                <span>ML Academic Engine Connected</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Right Column (Analysis) -->
+          <!-- Right Column: Performance Analysis & Insights -->
           <div class="column-right">
 
             <!-- Performance Analysis Card -->
-            <div class="card" style="margin-bottom: 16px;">
+            <div class="card">
               <div class="card-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="7" height="18" rx="1" />
-                    <rect x="14" y="7" width="7" height="14" rx="1" />
+                <div class="card-header-title">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="18" rx="1.5" />
+                    <rect x="14" y="7" width="7" height="14" rx="1.5" />
                   </svg>
-                  <span style="font-size: 16px; font-weight: 600;">Performance Analysis</span>
+                  <span>Performance Benchmark</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <select class="dropdown-pill" id="subjectDropdown" onchange="switchSubject(this.value)">
-                    <option value="">All Subjects ▾</option>
+                    <option value="">All Subjects</option>
                   </select>
                   <select class="dropdown-pill" id="examDropdown" onchange="switchExam(this.value)">
-                    <option value="ISA">This ISA ▾</option>
-                    <option value="LB">This LB ▾</option>
-                    <option value="LD">This LD ▾</option>
-                    <option value="CP">This CP ▾</option>
-                    <option value="SEA1">This SEA1 ▾</option>
-                    <option value="SEA2">This SEA2 ▾</option>
+                    <option value="ISA">Exam: ISA</option>
+                    <option value="LB">Exam: LB</option>
+                    <option value="LD">Exam: LD</option>
+                    <option value="CP">Exam: CP</option>
+                    <option value="SEA1">Exam: SEA1</option>
+                    <option value="SEA2">Exam: SEA2</option>
                   </select>
-                  <button style="font-size: 16px; background: none; border: none; cursor: pointer;">⋯</button>
                 </div>
               </div>
+
               <div class="metric-tiles">
                 <div class="metric-tile">
-                  <div style="font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Your Average</div>
-                  <div style="font-size: 26px; font-weight: 700; color: var(--data-blue); margin-bottom: 6px;"
-                    id="avgScoreVal">0%</div>
+                  <div class="metric-tile-label">Your Average</div>
+                  <div class="metric-tile-value" style="color: var(--cyan);" id="avgScoreVal">0%</div>
+                  <div class="metric-tile-sub">Current assessment aggregate</div>
                 </div>
                 <div class="metric-tile">
-                  <div style="font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Class Score</div>
-                  <div style="font-size: 26px; font-weight: 700; color: var(--data-blue); margin-bottom: 6px;"
-                    id="classScoreVal">—</div>
+                  <div class="metric-tile-label">Cohort Average</div>
+                  <div class="metric-tile-value" style="color: var(--primary-light);" id="classScoreVal">—</div>
+                  <div class="metric-tile-sub">Peer baseline benchmark</div>
                 </div>
                 <div class="metric-tile">
-                  <div style="font-size: 12px; color: var(--secondary-text); margin-bottom: 4px;">Performance Delta</div>
-                  <div style="font-size: 26px; font-weight: 700; color: var(--data-blue); margin-bottom: 6px;"
-                    id="improvementVal">0%</div>
+                  <div class="metric-tile-label">Cohort Delta</div>
+                  <div class="metric-tile-value" id="improvementVal">0%</div>
+                  <div class="metric-tile-sub">Relative performance variance</div>
                 </div>
               </div>
             </div>
 
-            <!-- Study Focus List -->
-            <div class="card" style="flex: 1; min-height: 250px;">
+            <!-- Study Focus & Adaptive Guidance -->
+            <div class="card" style="flex: 1; min-height: 240px;">
               <div class="card-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <div class="card-header-title">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                   </svg>
-                  <span style="font-size: 16px; font-weight: 600;">Study Focus List</span>
+                  <span>Study Focus & Intelligent Guidance</span>
                 </div>
-                <button style="font-size: 16px; background: none; border: none; cursor: pointer;">⋯</button>
               </div>
               <div class="study-focus-list" id="studyFocusList">
-                <div class="focus-row-placeholder">Analyzing performance...</div>
+                <div class="focus-row-placeholder">Running ML analysis on your assessment data...</div>
               </div>
             </div>
 
           </div>
         </div>
 
-        <!-- Exam Tabs for Results -->
-        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--card-border);">
-          <div
-            style="display: flex; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; overflow-x: auto;">
+        <!-- Assessment Marks & Examination Grid -->
+        <div class="exam-section-wrapper">
+          <div class="card-header" style="margin-bottom: 16px;">
+            <div class="card-header-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <span>Subject Marks Breakdown</span>
+            </div>
+          </div>
+          <div class="exam-tabs-container">
             <button class="exam-tab active" onclick="switchExamTab(this, 'ISA')">ISA</button>
             <button class="exam-tab" onclick="switchExamTab(this, 'LB')">LB</button>
             <button class="exam-tab" onclick="switchExamTab(this, 'LD')">LD</button>
@@ -222,8 +248,8 @@
             <button class="exam-tab" onclick="switchExamTab(this, 'SEA1')">SEA1</button>
             <button class="exam-tab" onclick="switchExamTab(this, 'SEA2')">SEA2</button>
           </div>
-          <div id="examResultsPanel" style="display: grid; gap: 12px;">
-            <!-- Results will be loaded here -->
+          <div id="examResultsPanel">
+            <div class="focus-row-placeholder">Loading subject assessments...</div>
           </div>
         </div>
 
@@ -232,32 +258,30 @@
       <!-- SCHEDULE & PRIORITY SUBJECTS VIEW -->
       <div class="page-view" id="view-schedule">
         <div class="greeting-row">
-          <div>
-            <h1>Priority Study Schedule</h1>
-            <p>Personalized focus areas based on your ML academic performance & gap analysis</p>
+          <div class="greeting-left">
+            <h1>Priority Study Schedule 📚</h1>
+            <p>Personalized focus areas calculated via ML performance gaps and credit weighting</p>
           </div>
-          <div class="pill-chip">
-            <span>Targeting Next Assessments</span>
+          <div class="pill-chip pulse-dot">
+            <span>Adaptive Study Plan Active</span>
           </div>
         </div>
 
         <div style="display: grid; gap: 20px;" id="prioritySubjectsContainer">
-          <!-- Dynamically loaded priority subjects -->
-          <div class="card" style="padding: 24px; text-align: center; color: var(--secondary-text);">
-            Loading your priority subjects...
+          <div class="card" style="padding: 32px; text-align: center; color: var(--text-muted);">
+            Analyzing semester syllabus and subject priorities...
           </div>
         </div>
       </div>
 
     </main>
 
-    <!-- NOTIFICATION PANEL -->
+    <!-- NOTIFICATION SLIDE-OUT PANEL -->
     <div class="notif-panel" id="notifPanel">
-      <div class="notif-header"
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 16px; font-weight: 700;">Notifications</h3>
+      <div class="notif-header">
+        <h3>Notifications</h3>
         <button onclick="toggleNotifPanel()" class="icon-btn" aria-label="Close Notifications"
-          style="width: 30px; height: 30px; border: none; font-size: 16px;">✕</button>
+          style="width: 32px; height: 32px; border: none; font-size: 15px;">✕</button>
       </div>
       <button class="notif-action" onclick="markAllAsRead()">Mark all as read</button>
       <div class="notif-list" id="notifList">
@@ -265,9 +289,6 @@
       </div>
     </div>
   </div>
-
-  <!-- STYLES -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
 
   <!-- SCRIPTS -->
   <script src="{{ url_for('static', filename='app.js') }}"></script>
