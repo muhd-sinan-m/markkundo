@@ -29,8 +29,10 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
-    reg_no = db.Column(db.String(50), unique=True, nullable=False)
-    semester = db.Column(db.Integer, default=6)
+    reg_no = db.Column(db.String(50), nullable=True)
+    semester = db.Column(db.Integer, default=1)
+    course = db.Column(db.String(100), default='BCA')
+    college = db.Column(db.String(255), default='Marian College Kuttikkanam')
     created_at = db.Column(db.String(50), default=lambda: datetime.utcnow().isoformat())
     
     # Relationships
@@ -38,16 +40,40 @@ class Student(db.Model):
     insights = db.relationship('MLInsight', backref='student', lazy=True, cascade='all, delete-orphan')
     notifications = db.relationship('Notification', backref='student', lazy=True, cascade='all, delete-orphan')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'reg_no': self.reg_no,
+            'semester': self.semester,
+            'course': self.course,
+            'college': self.college,
+        }
+
 class Mark(db.Model):
     __tablename__ = 'marks'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
     subject = db.Column(db.String(100), nullable=False)
-    exam_type = db.Column(db.String(20), nullable=False)  # ISA, LB, LD, CP, SEA1
+    exam_type = db.Column(db.String(20), nullable=False)  # ISA, LB, LD, CP, SEA1, SEA2
     score = db.Column(db.Float, nullable=False)
     max_score = db.Column(db.Float, default=100.0)
+    semester = db.Column(db.Integer, nullable=True)
     entered_at = db.Column(db.String(50), default=lambda: datetime.utcnow().isoformat())
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'subject': self.subject,
+            'exam_type': self.exam_type,
+            'score': self.score,
+            'max_score': self.max_score,
+            'semester': self.semester,
+            'entered_at': self.entered_at
+        }
 
 class MLInsight(db.Model):
     __tablename__ = 'ml_insights'
@@ -81,6 +107,8 @@ class Subject(db.Model):
     semester = db.Column(db.Integer, nullable=False)                   # 1–6
     num_papers = db.Column(db.Integer, default=0)                      # past papers count
     credits = db.Column(db.Integer, default=4)                         # credit allocation
+    is_elective = db.Column(db.Boolean, default=False)
+    elective_group = db.Column(db.String(100), nullable=True)
 
     def to_dict(self):
         return {
@@ -90,5 +118,8 @@ class Subject(db.Model):
             'semester': self.semester,
             'num_papers': self.num_papers,
             'credits': self.credits,
+            'is_elective': self.is_elective,
+            'elective_group': self.elective_group,
         }
+
 

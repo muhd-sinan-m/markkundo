@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
-from flask_login import login_required, current_user, login_user
+from flask_login import login_required, current_user
 from app import db, login_manager
-from app.models import Student, Mark, MLInsight, Notification, User
+from app.models import Student, Mark, MLInsight, Notification, User, Subject
 import json
 from datetime import datetime
 
@@ -9,19 +9,20 @@ bp = Blueprint('api', __name__)
 
 @login_manager.user_loader
 def load_user(user_id):
-    from app.models import User
     return db.session.get(User, int(user_id))
 
 def get_or_create_student():
-    """Get or create student record for current user"""
+    """Get or create student record for current user dynamically from DB"""
     student = Student.query.filter_by(email=current_user.email).first()
     
     if not student:
         student = Student(
             name=current_user.name,
             email=current_user.email,
-            reg_no=f"BCA/2024/{current_user.id:03d}",
-            semester=5
+            reg_no=f"BCA/2026/{current_user.id:03d}",
+            semester=1,
+            course='BCA',
+            college='Marian College Kuttikkanam'
         )
         db.session.add(student)
         db.session.commit()
@@ -30,43 +31,87 @@ def get_or_create_student():
 
 @bp.route('/')
 def index():
-    """Root — always redirect to login page. Role-based redirect happens after login."""
+    """Root route — redirects authenticated users to their dashboard, otherwise SSO landing"""
+    if current_user.is_authenticated:
+        if current_user.role == 'admin':
+            return redirect(url_for('admin.dashboard'))
+        return redirect(url_for('api.student_dashboard'))
     return redirect(url_for('auth.login'))
 
 @bp.route('/dashboard')
 @login_required
 def student_dashboard():
-    """Student dashboard view"""
+    """Student dashboard view populated with student and DB info"""
     student = get_or_create_student()
-    return render_template('student_dashboard.html', student=student)
+    target_subject = request.args.get('subject') or session.get('target_subject', '')
+    return render_template('student_dashboard.html', student=student, user=current_user, target_subject=target_subject)
+
+@bp.route('/api/student/profile')
+@login_required
+def get_student_profile():
+    """Get current student profile info directly from DB"""
+    student = get_or_create_student()
+    return jsonify({
+        'name': student.name,
+        'email': student.email,
+        'reg_no': student.reg_no,
+        'semester': student.semester,
+        'course': student.course or 'BCA',
+        'college': student.college or 'Marian College Kuttikkanam',
+        'role': current_user.role
+    })
 
 @bp.route('/api/student/subjects')
 @login_required
 def get_student_subjects():
-    """Get subjects strictly for current student's semester from DB"""
-    from app.models import Subject
+    """Get subjects for current student's semester from DB"""
     student = get_or_create_student()
     subjects = Subject.query.filter_by(semester=student.semester).all()
+    if not subjects:
+        # Fallback to any subjects with marks for this student
+        marked_subjects = db.session.query(Mark.subject).filter_by(student_id=student.id).distinct().all()
+        marked_names = [m[0] for m in marked_subjects]
+        if marked_names:
+            subjects = Subject.query.filter(Subject.name.in_(marked_names)).all()
+        if not subjects:
+            subjects = Subject.query.all()
+            
     return jsonify([s.to_dict() for s in subjects])
-
 
 @bp.route('/api/student/exams')
 @login_required
 def get_exams():
-    """Get student exam results"""
+    """Get student exam results from DB grouped by exam type"""
     student = get_or_create_student()
     
-    exams = ['ISA', 'LB', 'LD', 'CP', 'SEA1']
+    all_marks = Mark.query.filter_by(student_id=student.id).all()
+    exam_types = ['ISA', 'LB', 'LD', 'CP', 'SEA1', 'SEA2']
+    
+    # Also discover any custom exam types present in student's marks
+    for m in all_marks:
+        if m.exam_type and m.exam_type not in exam_types:
+            exam_types.append(m.exam_type)
+
     exam_results = {}
     
-    for exam in exams:
-        marks = Mark.query.filter_by(student_id=student.id, exam_type=exam).all()
+    for exam in exam_types:
+        marks = [m for m in all_marks if m.exam_type == exam]
         if marks:
-            score_pct = (sum(m.score for m in marks) / (len(marks) * marks[0].max_score)) * 100 if marks else 0
+            total_max = sum(m.max_score for m in marks)
+            total_score = sum(m.score for m in marks)
+            score_pct = (total_score / total_max * 100) if total_max > 0 else 0
+            
             exam_results[exam] = {
-                'score': score_pct,
+                'score': round(score_pct, 1),
+                'total_score': total_score,
+                'total_max': total_max,
                 'subjects': len(marks),
-                'marks': [{'subject': m.subject, 'score': m.score, 'max': m.max_score} for m in marks]
+                'marks': [{
+                    'subject': m.subject,
+                    'score': m.score,
+                    'max': m.max_score,
+                    'semester': m.semester
+                } for m in marks]
             }
     
     return jsonify(exam_results)
@@ -76,12 +121,20 @@ def get_exams():
 def get_insights(exam_type):
     """Get ML insights for a specific exam (optionally filtered by subject)"""
     student = get_or_create_student()
-
     subject = request.args.get('subject', default=None, type=str)
 
     insight = MLInsight.query.filter_by(student_id=student.id, exam_type=exam_type).first()
     if not insight:
-        return jsonify({'error': 'No insights available'}), 404
+        # Generate on-the-fly default if not yet computed
+        student_marks = Mark.query.filter_by(student_id=student.id, exam_type=exam_type).all()
+        if not student_marks:
+            return jsonify({'error': 'No insights available'}), 404
+        
+        from routes.sso import update_student_ml_insights
+        update_student_ml_insights(student.id)
+        insight = MLInsight.query.filter_by(student_id=student.id, exam_type=exam_type).first()
+        if not insight:
+            return jsonify({'error': 'No insights available'}), 404
 
     weak_subjects = json.loads(insight.weak_subjects) if insight.weak_subjects else []
 
@@ -92,42 +145,39 @@ def get_insights(exam_type):
 
         risk_level = insight.risk_level
         if is_weak:
-            # Ensure subject-specific risk feels actionable
             risk_level = insight.risk_level or 'warning'
         else:
-            # If subject isn't flagged as weak, downgrade severity a bit for UI
             if risk_level == 'critical':
                 risk_level = 'warning'
             elif risk_level == 'warning':
                 risk_level = 'info'
 
         recommendation = insight.recommendation or ''
-        # If the stored recommendation doesn't mention the selected subject, add context.
-        if subject and (subject not in recommendation):
+        if subject not in recommendation:
             if is_weak:
-                recommendation = f"Focus on {subject}: your score is below the class average for this subject."
+                recommendation = f"Focus on {subject}: your score is below the class average for this subject. Review past papers and practice core questions."
             else:
-                recommendation = f"{subject} looks stable: keep practicing to maintain your performance."
+                recommendation = f"{subject} looks stable: maintain your regular practice and revision."
 
         return jsonify({
-            'cluster': insight.cluster,
-            'risk_level': risk_level,
-            'weak_subjects': filtered_weak if filtered_weak else [subject] if not weak_subjects else filtered_weak,
+            'cluster': insight.cluster or 'Average',
+            'risk_level': risk_level or 'info',
+            'weak_subjects': filtered_weak if filtered_weak else [subject] if is_weak else [],
             'recommendation': recommendation,
             'selected_subject': subject
         })
 
     return jsonify({
-        'cluster': insight.cluster,
-        'risk_level': insight.risk_level,
+        'cluster': insight.cluster or 'Average',
+        'risk_level': insight.risk_level or 'info',
         'weak_subjects': weak_subjects,
-        'recommendation': insight.recommendation
+        'recommendation': insight.recommendation or "Review your subjects regularly to maintain top marks."
     })
 
 @bp.route('/api/student/notifications')
 @login_required
 def get_notifications():
-    """Get student notifications"""
+    """Get student notifications from DB"""
     student = get_or_create_student()
     
     notifications = Notification.query.filter_by(student_id=student.id).order_by(Notification.sent_at.desc()).all()
@@ -168,7 +218,7 @@ def mark_all_notifications_read():
 @bp.route('/api/student/class-rank/<exam_type>')
 @login_required
 def get_class_rank(exam_type):
-    """Get student's class rank for an exam (optionally filtered by subject)"""
+    """Get student's class rank for an exam from DB"""
     student = get_or_create_student()
     subject = request.args.get('subject', default=None, type=str)
 
@@ -179,9 +229,9 @@ def get_class_rank(exam_type):
     student_marks = q.all()
 
     if not student_marks:
-        return jsonify({'rank': 0, 'percentile': 0, 'total': 0})
+        return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': 0, 'class_avg': 0})
 
-    student_avg = (sum(m.score for m in student_marks) / len(student_marks))
+    student_avg = sum(m.score for m in student_marks) / len(student_marks)
 
     # Get all students' averages for this exam
     all_students = Student.query.all()
@@ -189,3 +239,32 @@ def get_class_rank(exam_type):
 
     for s in all_students:
         q2 = Mark.query.filter_by(student_id=s.id, exam_type=exam_type)
+        if subject:
+            q2 = q2.filter_by(subject=subject)
+        s_marks = q2.all()
+        if s_marks:
+            s_avg = sum(m.score for m in s_marks) / len(s_marks)
+            rankings.append((s.id, s_avg))
+
+    if not rankings:
+        return jsonify({
+            'rank': 1,
+            'percentile': 100,
+            'total': 1,
+            'student_avg': round(student_avg, 1),
+            'class_avg': round(student_avg, 1)
+        })
+
+    rankings.sort(key=lambda x: x[1], reverse=True)
+    rank = next((i + 1 for i, (sid, _) in enumerate(rankings) if sid == student.id), 1)
+    total = len(rankings)
+    percentile = round(((total - rank + 1) / total) * 100, 1) if total > 0 else 100
+    class_avg = round(sum(r[1] for r in rankings) / total, 1) if total > 0 else round(student_avg, 1)
+
+    return jsonify({
+        'rank': rank,
+        'percentile': percentile,
+        'total': total,
+        'student_avg': round(student_avg, 1),
+        'class_avg': class_avg
+    })
