@@ -20,6 +20,7 @@ def login():
     message_code = request.args.get('message')
     
     error_messages = {
+        'sso_required': 'Access to Markkundo requires Single Sign-On via Padikkunnundo. Please log in to Padikkunnundo and click "Analyse with Markkundo".',
         'missing_token': 'SSO token is missing. Please launch Markkundo from Padikkunnundo.',
         'sso_not_configured': 'SSO integration is not configured on this server.',
         'token_expired': 'Your single sign-on session token has expired. Please launch Markkundo again from Padikkunnundo.',
@@ -27,6 +28,7 @@ def login():
         'missing_email': 'The SSO token did not contain a valid student email address.',
         'untrusted_issuer': 'The SSO token issuer was untrusted.',
     }
+
     
     error_msg = error_messages.get(error_code)
     padikkunnundo_url = os.environ.get('PADIKKUNNUNDO_URL', 'https://padikkunundo.app')

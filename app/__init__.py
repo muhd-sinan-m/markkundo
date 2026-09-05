@@ -46,7 +46,20 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        from flask import request, jsonify, redirect, url_for
+        if request.is_json or request.path.startswith('/api/') or request.path.startswith('/admin/api/'):
+            return jsonify({
+                'error': 'Unauthorized — Single Sign-On (SSO) via Padikkunnundo is required.',
+                'code': 401,
+                'sso_required': True
+            }), 401
+        return redirect(url_for('auth.login', error='sso_required'))
+
     limiter.init_app(app)
+
 
     # ── Security headers on every response ─────────────────────────────────────
     @app.after_request
