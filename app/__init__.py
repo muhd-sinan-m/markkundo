@@ -97,7 +97,7 @@ def create_app():
         # Whitelist static assets and auth endpoints
         endpoint = request.endpoint or ''
         if endpoint.startswith('static') or endpoint in [
-            'auth.login', 'auth.logout', 'sso.sso_login', 'sso.generate_sso_token'
+            'auth.login', 'auth.logout', 'sso.sso_login'
         ]:
             return
 
