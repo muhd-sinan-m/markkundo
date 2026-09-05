@@ -762,6 +762,42 @@ body::before {
   color: var(--text-dim);
 }
 
+/* ── Metric Loading Skeleton & Animation ────────────────────────────────── */
+.metric-skeleton-pulse {
+  display: inline-block;
+  width: 65px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.2s infinite ease-in-out;
+  vertical-align: middle;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.metric-value-fade {
+  animation: fadeInMetric 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInMetric {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* ── Study Focus & Insights Card ────────────────────────────────────────── */
 .study-focus-list {
   display: flex;

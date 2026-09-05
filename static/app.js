@@ -243,19 +243,34 @@ async function switchExamTab(btn, examType) {
   }
 }
 
-// 4. Fetch Class Rank & Average Metrics
+// 4. Fetch Class Rank & Average Metrics with Skeleton Animation
 async function fetchClassMetrics(examType) {
   const subject = document.getElementById('subjectDropdown')?.value || '';
   let url = `/api/student/class-rank/${examType}`;
   if (subject) url += `?subject=${encodeURIComponent(subject)}`;
 
+  const avgScoreVal = document.getElementById('avgScoreVal');
+  const classScoreVal = document.getElementById('classScoreVal');
+  const improvementVal = document.getElementById('improvementVal');
+
+  // Immediately display loading skeleton pulse
+  if (avgScoreVal) {
+    avgScoreVal.innerHTML = '<span class="metric-skeleton-pulse"></span>';
+    avgScoreVal.classList.remove('metric-value-fade');
+  }
+  if (classScoreVal) {
+    classScoreVal.innerHTML = '<span class="metric-skeleton-pulse"></span>';
+    classScoreVal.classList.remove('metric-value-fade');
+  }
+  if (improvementVal) {
+    improvementVal.innerHTML = '<span class="metric-skeleton-pulse"></span>';
+    improvementVal.classList.remove('metric-value-fade');
+  }
+
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      const avgScoreVal = document.getElementById('avgScoreVal');
-      const classScoreVal = document.getElementById('classScoreVal');
-      const improvementVal = document.getElementById('improvementVal');
 
       if (avgScoreVal) {
         if (data.student_avg === null || data.student_avg === undefined) {
@@ -265,11 +280,15 @@ async function fetchClassMetrics(examType) {
           avgScoreVal.textContent = `${data.student_avg}%`;
           avgScoreVal.style.fontSize = '';
         }
+        avgScoreVal.classList.add('metric-value-fade');
       }
-      if (classScoreVal) classScoreVal.textContent = (data.class_avg !== undefined && data.class_avg !== null) ? `${data.class_avg}%` : '—';
+      if (classScoreVal) {
+        classScoreVal.textContent = (data.class_avg !== undefined && data.class_avg !== null) ? `${data.class_avg}%` : '—';
+        classScoreVal.classList.add('metric-value-fade');
+      }
 
       if (improvementVal) {
-        if (data.student_avg === null || data.student_avg === undefined) {
+        if (data.student_avg === null || data.student_avg === undefined || data.class_avg === null || data.class_avg === undefined) {
           improvementVal.textContent = '—';
           improvementVal.style.color = 'var(--text-dim)';
         } else {
@@ -277,10 +296,14 @@ async function fetchClassMetrics(examType) {
           improvementVal.textContent = gap >= 0 ? `+${gap.toFixed(1)}%` : `${gap.toFixed(1)}%`;
           improvementVal.style.color = gap >= 0 ? 'var(--emerald)' : 'var(--rose)';
         }
+        improvementVal.classList.add('metric-value-fade');
       }
     }
   } catch (e) {
     console.error('Error loading class rank metrics:', e);
+    if (avgScoreVal) avgScoreVal.textContent = '—';
+    if (classScoreVal) classScoreVal.textContent = '—';
+    if (improvementVal) improvementVal.textContent = '—';
   }
 }
 
@@ -297,8 +320,12 @@ function updateMetricTiles(examType, studentAvg, classAvg, improvement) {
       avgScoreVal.textContent = `${studentAvg}%`;
       avgScoreVal.style.fontSize = '';
     }
+    avgScoreVal.classList.add('metric-value-fade');
   }
-  if (classScoreVal) classScoreVal.textContent = classAvg !== null ? `${classAvg}%` : '—';
+  if (classScoreVal) {
+    classScoreVal.textContent = classAvg !== null ? `${classAvg}%` : '—';
+    classScoreVal.classList.add('metric-value-fade');
+  }
   if (improvementVal) {
     if (improvement === null || improvement === undefined) {
       improvementVal.textContent = '—';
@@ -307,6 +334,7 @@ function updateMetricTiles(examType, studentAvg, classAvg, improvement) {
       improvementVal.textContent = `${improvement}%`;
       improvementVal.style.color = improvement >= 0 ? 'var(--emerald)' : 'var(--rose)';
     }
+    improvementVal.classList.add('metric-value-fade');
   }
 }
 
@@ -321,8 +349,6 @@ function switchSubject(subjectName) {
   const currentExam = document.getElementById('examDropdown')?.value || 'ISA';
   const activeBtn = Array.from(document.querySelectorAll('.exam-tab')).find(b => b.textContent.trim() === currentExam);
   switchExamTab(activeBtn, currentExam);
-  fetchClassMetrics(currentExam);
-  loadSubjectInsights(currentExam);
 }
 
 // 7. Load ML insights & study tips for selected exam / subject (clean, zero emojis)
@@ -334,8 +360,19 @@ async function loadSubjectInsights(examType) {
   const focusList = document.getElementById('studyFocusList');
   if (!focusList) return;
 
+  focusList.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="metric-skeleton-pulse" style="width: 140px; height: 16px;"></span>
+        <span class="metric-skeleton-pulse" style="width: 110px; height: 18px; border-radius: 20px;"></span>
+      </div>
+      <div class="metric-skeleton-pulse" style="width: 100%; height: 46px; border-radius: 8px;"></div>
+      <div class="metric-skeleton-pulse" style="width: 70%; height: 14px;"></div>
+    </div>
+  `;
+
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: 'no-store' });
     let insightText = "";
     let riskLevel = "info";
     let difficulty = "Moderate";
