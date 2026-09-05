@@ -113,35 +113,12 @@ def create_app():
         except Exception:
             pass
 
-        # Run safe column migrations for SQLite & PostgreSQL
-        try:
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            def add_col_if_missing(table, col, col_def):
-                cols = [c['name'] for c in inspector.get_columns(table)]
-                if col not in cols:
-                    db.session.execute(text(f'ALTER TABLE {table} ADD COLUMN {col} {col_def};'))
-                    db.session.commit()
-            if 'marks' in inspector.get_table_names():
-                add_col_if_missing('marks', 'semester', 'INTEGER')
-            if 'students' in inspector.get_table_names():
-                add_col_if_missing('students', 'course', 'VARCHAR(100)')
-                add_col_if_missing('students', 'college', 'VARCHAR(255)')
-                add_col_if_missing('students', 'enrolled_subjects', 'TEXT')
-
-            if 'subjects' in inspector.get_table_names():
-                add_col_if_missing('subjects', 'credits', 'INTEGER DEFAULT 4')
-                add_col_if_missing('subjects', 'is_elective', 'BOOLEAN DEFAULT FALSE')
-                add_col_if_missing('subjects', 'elective_group', 'VARCHAR(100)')
-        except Exception:
-            pass
-
-
         # ── Blueprints ─────────────────────────────────────────────────────────
         from app.routes import api, auth, admin, sso
         app.register_blueprint(api.bp)
         app.register_blueprint(auth.bp)
         app.register_blueprint(admin.bp)
         app.register_blueprint(sso.bp)
+
 
     return app
