@@ -109,6 +109,13 @@
                 <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo academic intelligence" class="student-hero-logo" />
               </div>
 
+              <!-- Student Profile Meta -->
+              <div class="student-hero-meta" style="margin-bottom: 18px;">
+                <h2>{{ student.name if student else 'Student' }}</h2>
+                <p>{{ student.college or 'Marian College Kuttikkanam' }}</p>
+                <p style="color: var(--primary); font-weight: 600;">{{ student.course or 'BCA' }} — Semester {{ student.semester if student else 1 }}</p>
+              </div>
+
               <!-- Overall Score Box -->
               <div class="overall-score-box">
                 <div>
