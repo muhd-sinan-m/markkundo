@@ -106,10 +106,11 @@ def sso_login():
             sso_secret,
             algorithms=['HS256'],
             audience='markkundo',
-            issuer='padikkunnundo',
+            issuer=['padikkunnundo', 'padikkunundo'],
             options={'require': ['sub']}
         )
     except jwt.ExpiredSignatureError:
+        current_app.logger.warning('SSO token has expired')
         return redirect(url_for('auth.login') + '?error=token_expired')
     except jwt.InvalidTokenError as e:
         current_app.logger.warning(f'Invalid SSO token: {e}')
