@@ -11,7 +11,12 @@ load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=os.getenv('RATELIMIT_STORAGE_URI', os.getenv('REDIS_URL', 'memory://')),
+    strategy='fixed-window',
+    default_limits=[]
+)
 
 
 def create_app():
