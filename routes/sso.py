@@ -106,7 +106,7 @@ def sso_login():
             sso_secret,
             algorithms=['HS256'],
             audience='markkundo',
-            issuer=['padikkunnundo', 'padikkunundo'],
+            issuer='padikkunnundo',
             options={'require': ['sub']}
         )
     except jwt.ExpiredSignatureError:
@@ -312,12 +312,12 @@ def sso_login():
     return redirect(redirect_url)
 
 
-# ── SSO Token Generator (markkundo issues token for padikkunundo to use if requested) ─────
+# ── SSO Token Generator (markkundo issues token for padikkunnundo to use if requested) ─────
 
 @bp.route('/sso/generate', methods=['POST'])
 def generate_sso_token():
     """
-    Called by padikkunundo server-to-server to generate an SSO login URL.
+    Called by padikkunnundo server-to-server to generate an SSO login URL.
     """
     data = request.get_json() or {}
     provided_secret = data.get('secret', '')
