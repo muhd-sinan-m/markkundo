@@ -25,7 +25,7 @@
     <!-- TOP NAVIGATION BAR -->
     <nav class="top-nav" role="navigation" aria-label="Main navigation">
       <a href="/" class="nav-logo" aria-label="markkundo home">
-        <div class="nav-logo-mark">mk</div>
+        <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo" class="nav-logo-img" />
         <span class="nav-wordmark">markkundo<span>.</span></span>
       </a>
 
@@ -61,15 +61,14 @@
           <input type="text" placeholder="Search subjects…" aria-label="Search" id="searchInput" />
         </div>
         <button class="icon-btn" id="notifBellBtn" aria-label="Notifications" onclick="toggleNotifPanel()">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 01-3.46 0" />
           </svg>
           <span class="notif-badge" id="notifBadge">0</span>
         </button>
         <div class="user-avatar-area" aria-label="User profile">
-          <div class="user-avatar" id="userAvatar"
-            style="background: linear-gradient(135deg, var(--grad-start), var(--grad-end));">
+          <div class="user-avatar" id="userAvatar">
             {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
           </div>
           <div class="user-info">
@@ -96,8 +95,8 @@
         <!-- Greeting Row -->
         <div class="greeting-row">
           <div class="greeting-left">
-            <h1>Welcome back, <span class="highlight-name" id="greetingName">{{ (student.name.split(' ')[0] if student and student.name else (user.name.split(' ')[0] if user and user.name else 'Student')) }}</span> 👋</h1>
-            <p>Tracking your active semester academic milestones across <span id="examCount" style="color: var(--cyan); font-weight: 700;">0</span> assessment categories</p>
+            <h1>Welcome back, <span class="highlight-name" id="greetingName">{{ (student.name.split(' ')[0] if student and student.name else (user.name.split(' ')[0] if user and user.name else 'Student')) }}</span></h1>
+            <p>Tracking your active semester academic milestones across <span id="examCount" style="color: var(--primary); font-weight: 700;">0</span> assessment categories</p>
           </div>
           <div class="greeting-right">
             <div class="pill-chip pulse-dot">
@@ -118,6 +117,11 @@
           <!-- Left Column: Student Hero Profile & Mastery -->
           <div class="column-left">
             <div class="student-hero-card">
+              <!-- Logo Showcase -->
+              <div class="student-hero-banner">
+                <img src="{{ url_for('static', filename='img/logo.webp') }}" alt="markkundo academic intelligence" class="student-hero-logo" />
+              </div>
+
               <div class="student-hero-header">
                 <div class="student-hero-avatar">
                   {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
@@ -125,7 +129,7 @@
                 <div class="student-hero-meta">
                   <h2>{{ student.name if student else 'Student' }}</h2>
                   <p>{{ student.college or 'Marian College Kuttikkanam' }}</p>
-                  <p style="color: var(--primary-light); font-weight: 600;">{{ student.course or 'BCA' }} — Semester {{ student.semester if student else 1 }}</p>
+                  <p style="color: var(--primary); font-weight: 600;">{{ student.course or 'BCA' }} — Semester {{ student.semester if student else 1 }}</p>
                 </div>
               </div>
 
@@ -142,9 +146,9 @@
 
               <!-- Academic Readiness Meter -->
               <div class="readiness-meter-container">
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted);">
                   <span>Assessment Progress</span>
-                  <span id="readinessScoreVal" style="color: var(--cyan); font-weight: 700;">Active</span>
+                  <span id="readinessScoreVal" style="color: var(--primary); font-weight: 700;">Active</span>
                 </div>
                 <div class="readiness-track">
                   <div class="readiness-bar" id="readinessProgressBar" style="width: 75%;"></div>
@@ -152,7 +156,7 @@
               </div>
 
               <div class="ml-status-badge">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                 </svg>
                 <span>ML Academic Engine Connected</span>
@@ -167,13 +171,13 @@
             <div class="card">
               <div class="card-header">
                 <div class="card-header-title">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="7" height="18" rx="1.5" />
                     <rect x="14" y="7" width="7" height="14" rx="1.5" />
                   </svg>
                   <span>Performance Benchmark</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <select class="dropdown-pill" id="subjectDropdown" onchange="switchSubject(this.value)">
                     <option value="">All Subjects</option>
                   </select>
@@ -191,12 +195,12 @@
               <div class="metric-tiles">
                 <div class="metric-tile">
                   <div class="metric-tile-label">Your Average</div>
-                  <div class="metric-tile-value" style="color: var(--cyan);" id="avgScoreVal">0%</div>
+                  <div class="metric-tile-value" style="color: var(--primary);" id="avgScoreVal">0%</div>
                   <div class="metric-tile-sub">Current assessment aggregate</div>
                 </div>
                 <div class="metric-tile">
                   <div class="metric-tile-label">Cohort Average</div>
-                  <div class="metric-tile-value" style="color: var(--primary-light);" id="classScoreVal">—</div>
+                  <div class="metric-tile-value" id="classScoreVal">—</div>
                   <div class="metric-tile-sub">Peer baseline benchmark</div>
                 </div>
                 <div class="metric-tile">
@@ -208,10 +212,10 @@
             </div>
 
             <!-- Study Focus & Adaptive Guidance -->
-            <div class="card" style="flex: 1; min-height: 240px;">
+            <div class="card" style="flex: 1; min-height: 220px;">
               <div class="card-header">
                 <div class="card-header-title">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                   </svg>
@@ -228,9 +232,9 @@
 
         <!-- Assessment Marks & Examination Grid -->
         <div class="exam-section-wrapper">
-          <div class="card-header" style="margin-bottom: 16px;">
+          <div class="card-header" style="margin-bottom: 14px;">
             <div class="card-header-title">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -259,7 +263,7 @@
       <div class="page-view" id="view-schedule">
         <div class="greeting-row">
           <div class="greeting-left">
-            <h1>Priority Study Schedule 📚</h1>
+            <h1>Priority Study Schedule</h1>
             <p>Personalized focus areas calculated via ML performance gaps and credit weighting</p>
           </div>
           <div class="pill-chip pulse-dot">
@@ -267,8 +271,8 @@
           </div>
         </div>
 
-        <div style="display: grid; gap: 20px;" id="prioritySubjectsContainer">
-          <div class="card" style="padding: 32px; text-align: center; color: var(--text-muted);">
+        <div style="display: grid; gap: 18px;" id="prioritySubjectsContainer">
+          <div class="card" style="padding: 28px; text-align: center; color: var(--text-muted);">
             Analyzing semester syllabus and subject priorities...
           </div>
         </div>
@@ -281,7 +285,7 @@
       <div class="notif-header">
         <h3>Notifications</h3>
         <button onclick="toggleNotifPanel()" class="icon-btn" aria-label="Close Notifications"
-          style="width: 32px; height: 32px; border: none; font-size: 15px;">✕</button>
+          style="width: 30px; height: 30px; border: none; font-size: 14px;">✕</button>
       </div>
       <button class="notif-action" onclick="markAllAsRead()">Mark all as read</button>
       <div class="notif-list" id="notifList">

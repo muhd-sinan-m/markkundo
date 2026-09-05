@@ -106,7 +106,7 @@ async function loadExamsData() {
   }
 }
 
-// 3. Switch active exam tab & render enriched cards
+// 3. Switch active exam tab & render clean cards
 async function switchExamTab(btn, examType) {
   document.querySelectorAll('.exam-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -127,12 +127,12 @@ async function switchExamTab(btn, examType) {
     
     if (!examData || !examData.marks || examData.marks.length === 0) {
       panel.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-          <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 12px; color: var(--text-dim);">
+        <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+          <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 10px; color: var(--text-dim);">
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <div style="font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px;">No assessment records for ${examType}</div>
-          <div style="font-size: 13px;">Scores will appear here as soon as assessments are synced from Padikkunnundo.</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No assessment records for ${examType}</div>
+          <div style="font-size: 12.5px;">Scores will appear here as soon as assessments are synced from Padikkunnundo.</div>
         </div>
       `;
       updateMetricTiles(examType, 0, null, 0);
@@ -151,24 +151,24 @@ async function switchExamTab(btn, examType) {
 
         let badgeClass = 'badge-primary';
         let badgeLabel = 'Proficient';
-        let barColor = 'linear-gradient(90deg, var(--primary), var(--cyan))';
+        let barColor = 'linear-gradient(90deg, #4f46e5, #0284c7)';
 
         if (pct >= 85) {
           badgeClass = 'badge-success';
           badgeLabel = 'Outstanding';
-          barColor = 'linear-gradient(90deg, var(--cyan), var(--emerald))';
+          barColor = 'linear-gradient(90deg, #059669, #10b981)';
         } else if (pct >= 60) {
           badgeClass = 'badge-primary';
           badgeLabel = 'Strong';
-          barColor = 'linear-gradient(90deg, var(--primary), var(--cyan))';
+          barColor = 'linear-gradient(90deg, #4f46e5, #0284c7)';
         } else if (pct >= 40) {
           badgeClass = 'badge-warning';
           badgeLabel = 'Developing';
-          barColor = 'linear-gradient(90deg, var(--amber), #fb923c)';
+          barColor = 'linear-gradient(90deg, #d97706, #f59e0b)';
         } else {
           badgeClass = 'badge-danger';
           badgeLabel = 'Needs Focus';
-          barColor = 'linear-gradient(90deg, var(--rose), #fb7185)';
+          barColor = 'linear-gradient(90deg, #e11d48, #f43f5e)';
         }
 
         return `
@@ -179,7 +179,7 @@ async function switchExamTab(btn, examType) {
                 <div class="subject-card-semester">${m.semester ? `Semester ${m.semester}` : 'Core Subject'} · ${examType}</div>
               </div>
               <div class="subject-card-score-box">
-                <div class="subject-card-score">${score} <span style="font-size: 13px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>
+                <div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>
                 <div class="subject-card-pct">${pct}%</div>
               </div>
             </div>
@@ -228,7 +228,7 @@ async function fetchClassMetrics(examType) {
       const gap = (data.student_avg || 0) - (data.class_avg || 0);
       if (improvementVal) {
         improvementVal.textContent = gap >= 0 ? `+${gap.toFixed(1)}%` : `${gap.toFixed(1)}%`;
-        improvementVal.style.color = gap >= 0 ? 'var(--emerald-light)' : 'var(--rose-light)';
+        improvementVal.style.color = gap >= 0 ? 'var(--emerald)' : 'var(--rose)';
       }
     }
   } catch (e) {
@@ -245,7 +245,7 @@ function updateMetricTiles(examType, studentAvg, classAvg, improvement) {
   if (classScoreVal) classScoreVal.textContent = classAvg !== null ? `${classAvg}%` : '—';
   if (improvementVal) {
     improvementVal.textContent = `${improvement}%`;
-    improvementVal.style.color = improvement >= 0 ? 'var(--emerald-light)' : 'var(--rose-light)';
+    improvementVal.style.color = improvement >= 0 ? 'var(--emerald)' : 'var(--rose)';
   }
 }
 
@@ -264,7 +264,7 @@ function switchSubject(subjectName) {
   loadSubjectInsights(currentExam);
 }
 
-// 7. Load ML insights & study tips for selected exam / subject
+// 7. Load ML insights & study tips for selected exam / subject (clean, zero emojis)
 async function loadSubjectInsights(examType) {
   const subject = document.getElementById('subjectDropdown')?.value || '';
   let url = `/api/student/insights/${examType}`;
@@ -291,23 +291,23 @@ async function loadSubjectInsights(examType) {
     }
 
     const diffBadgeStyles = {
-      'hard': 'background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3);',
-      'moderate': 'background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3);',
-      'easy': 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);'
+      'hard': 'background: var(--rose-subtle); color: var(--rose); border: 1px solid #fecdd3;',
+      'moderate': 'background: var(--primary-subtle); color: var(--primary); border: 1px solid #c7d2fe;',
+      'easy': 'background: var(--emerald-subtle); color: var(--emerald); border: 1px solid #a7f3d0;'
     };
 
     const tips = [
-      "⚡ <strong>Active Retrieval:</strong> Solve past semester problem sets and code snippets without referring to solutions first.",
-      "⏱️ <strong>Spaced Revision:</strong> Dedicate 30 minutes daily to high-credit subjects before final semester assessments.",
-      "📝 <strong>Targeted Focus:</strong> Prioritize key topics where cohort variance is highest to boost overall rank percentile."
+      "<strong>Active Retrieval:</strong> Practice previous year exam papers and code snippets without referring to reference notes.",
+      "<strong>Spaced Revision:</strong> Dedicate 30 minutes daily to high-credit subjects before final semester assessments.",
+      "<strong>Targeted Review:</strong> Prioritize key topics where cohort variance is highest to boost overall rank percentile."
     ];
 
     let content = `
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-          <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Cohort Assessment Benchmark</span>
-          <span style="font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
-            📊 ${difficulty} Examination · Class Avg: ${classAvgPct}%
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Cohort Assessment Benchmark</span>
+          <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
+            ${difficulty} Examination · Class Avg: ${classAvgPct}%
           </span>
         </div>
 
@@ -317,8 +317,8 @@ async function loadSubjectInsights(examType) {
           </div>
         ` : ''}
 
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-          <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Recommended ML Study Strategies</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Recommended Study Strategies</span>
           ${tips.map(tip => `
             <div class="study-tip-item">
               <div>${tip}</div>
@@ -354,12 +354,12 @@ async function loadNotifications() {
     const list = document.getElementById('notifList');
     if (list) {
       if (notifs.length === 0) {
-        list.innerHTML = '<div style="color:var(--text-muted); font-size: 13px; padding: 24px; text-align: center;">No new notifications</div>';
+        list.innerHTML = '<div style="color:var(--text-muted); font-size: 12.5px; padding: 20px; text-align: center;">No new notifications</div>';
       } else {
         list.innerHTML = notifs.map(n => `
           <div class="notif-item" style="border-left: 3px solid ${n.is_read ? 'var(--border-glass)' : 'var(--primary)'};">
-            <div style="color: var(--text-main); font-size: 13px; font-weight: 500;">${n.message}</div>
-            <div style="color: var(--text-dim); font-size: 11px; margin-top: 4px;">${n.exam || 'Assessment'} · ${n.timestamp ? new Date(n.timestamp).toLocaleDateString() : 'Recent'}</div>
+            <div style="color: var(--text-main); font-size: 12.5px; font-weight: 500;">${n.message}</div>
+            <div style="color: var(--text-dim); font-size: 11px; margin-top: 3px;">${n.exam || 'Assessment'} · ${n.timestamp ? new Date(n.timestamp).toLocaleDateString() : 'Recent'}</div>
           </div>
         `).join('');
       }
@@ -378,7 +378,7 @@ async function markAllAsRead() {
   }
 }
 
-// 9. Load Priority Subjects & Schedule
+// 9. Load Priority Subjects & Schedule (clean, zero emojis)
 async function loadPrioritySchedule() {
   const container = document.getElementById('prioritySubjectsContainer');
   if (!container) return;
@@ -399,7 +399,7 @@ async function loadPrioritySchedule() {
     const weakSubjects = insight.weak_subjects || [];
     
     if (subjects.length === 0) {
-      container.innerHTML = '<div class="card" style="padding: 32px; text-align: center; color: var(--text-muted);">No subjects found for this active semester.</div>';
+      container.innerHTML = '<div class="card" style="padding: 28px; text-align: center; color: var(--text-muted);">No subjects found for this active semester.</div>';
       return;
     }
 
@@ -424,24 +424,24 @@ async function loadPrioritySchedule() {
     }).sort((a, b) => (a.priority === 'HIGH PRIORITY' ? -1 : 1));
 
     container.innerHTML = sorted.map(item => `
-      <div class="card" style="display: flex; flex-direction: column; gap: 14px; border-left: 4px solid ${item.priority === 'HIGH PRIORITY' ? 'var(--rose)' : 'var(--emerald)'};">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 700; color: #fff;">${item.name}</h3>
+      <div class="card" style="display: flex; flex-direction: column; gap: 12px; border-left: 4px solid ${item.priority === 'HIGH PRIORITY' ? 'var(--rose)' : 'var(--emerald)'};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-main);">${item.name}</h3>
             <span class="badge ${item.badgeClass}">${item.priority}</span>
           </div>
-          <span style="font-family: var(--font-display); font-size: 12.5px; font-weight: 700; color: var(--cyan); background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); padding: 5px 14px; border-radius: var(--radius-full);">
-            📅 Target: ${item.hoursPerWeek}
+          <span style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-subtle); border: 1px solid rgba(99, 102, 241, 0.2); padding: 4px 12px; border-radius: var(--radius-full);">
+            Target: ${item.hoursPerWeek}
           </span>
         </div>
-        <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.6;">
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
           ${item.explanation}
         </p>
-        <div style="display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); border-top: 1px solid var(--border-glass-subtle); padding-top: 12px; margin-top: 4px; flex-wrap: wrap;">
-          <span>Program: <strong style="color: var(--text-muted);">${item.program}</strong></span>
-          <span>Semester: <strong style="color: var(--text-muted);">${item.semester}</strong></span>
-          <span>Credits: <strong style="color: var(--text-muted);">${item.credits}</strong></span>
-          <span>Past Papers: <strong style="color: var(--text-muted);">${item.numPapers} available</strong></span>
+        <div style="display: flex; gap: 18px; font-size: 11.5px; color: var(--text-dim); border-top: 1px solid var(--border-glass-subtle); padding-top: 10px; margin-top: 2px; flex-wrap: wrap;">
+          <span>Program: <strong style="color: var(--text-body);">${item.program}</strong></span>
+          <span>Semester: <strong style="color: var(--text-body);">${item.semester}</strong></span>
+          <span>Credits: <strong style="color: var(--text-body);">${item.credits}</strong></span>
+          <span>Past Papers: <strong style="color: var(--text-body);">${item.numPapers} available</strong></span>
         </div>
       </div>
     `).join('');
