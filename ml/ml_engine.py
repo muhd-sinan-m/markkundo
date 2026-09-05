@@ -26,10 +26,10 @@ class StudyFocusRecommender:
         
         overall_avg = float(df['score_pct'].mean())
         
-        # Calculate class average per subject
+        # Calculate semester average per subject
         class_avg = df.groupby('subject')['score_pct'].mean()
         
-        # Find weak subjects (< 50% or > 15% below class average)
+        # Find weak subjects (< 50% or > 12% below semester average)
         weak_subjects = []
         for subject in df['subject'].unique():
             subj_rows = df[df['subject'] == subject]
@@ -52,7 +52,7 @@ class StudyFocusRecommender:
         if weak_subjects:
             top_weak = weak_subjects[0]
             if top_weak['class_avg'] > top_weak['student_score']:
-                recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}% vs class average {top_weak['class_avg']:.0f}%. We recommend dedicating extra review time to this subject before SEA2."
+                recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}% vs semester average {top_weak['class_avg']:.0f}%. We recommend dedicating extra review time to this subject before SEA2."
             else:
                 recommendation = f"Your {top_weak['subject']} score is {top_weak['student_score']:.0f}%. Additional practice on foundational problem sets will help secure higher marks in SEA2."
         elif overall_avg >= 75.0:
@@ -171,14 +171,14 @@ class AnomalyDetector:
 
 class ExamDifficultyAnalyzer:
     """
-    ML Module 4: Exam Difficulty & Class Context Analyzer
-    Evaluates paper difficulty based on total class performance distribution,
+    ML Module 4: Exam Difficulty & Cohort Context Analyzer
+    Evaluates paper difficulty based on total semester batch performance distribution,
     and provides empathetic, calm, and constructive feedback.
     """
     @staticmethod
     def analyze_difficulty(all_marks_data, student_marks_data=None, selected_subject=None):
         """
-        - all_marks_data: list of marks dicts for the exam across all students
+        - all_marks_data: list of marks dicts for the exam across all students in the semester
         - student_marks_data: list of marks dicts for the specific student
         - selected_subject: optional subject filter
         """
@@ -192,7 +192,7 @@ class ExamDifficultyAnalyzer:
                 'class_avg_pct': None,
                 'student_avg_pct': None,
                 'high_score_ratio': 0,
-                'interpretation': 'No marks entered yet for this assessment. Enter marks in Padikkunnundo to calculate class performance benchmarks.'
+                'interpretation': 'No marks entered yet for this assessment. Enter marks in Padikkunnundo to calculate semester performance benchmarks.'
             }
 
         df_all = pd.DataFrame(valid_all)
@@ -216,7 +216,7 @@ class ExamDifficultyAnalyzer:
         high_scorers = len(df_all[df_all['score_pct'] >= 80.0])
         high_score_ratio = (high_scorers / len(df_all)) if len(df_all) > 0 else 0
 
-        # Classify difficulty based on overall class average
+        # Classify difficulty based on overall semester average
         if class_avg_pct < 50.0:
             difficulty = "Challenging"
             difficulty_level = "hard"
@@ -242,37 +242,37 @@ class ExamDifficultyAnalyzer:
 
                 if (high_score_ratio >= 0.35 or class_avg_pct >= 70.0) and student_avg_pct <= 40.0:
                     interpretation = (
-                        f"The class scored an average of {class_avg_pct:.0f}% in this assessment. "
+                        f"The semester batch scored an average of {class_avg_pct:.0f}% in this assessment. "
                         f"Your score was {student_avg_pct:.0f}%. Focus on the core foundational topics before your next assessment—"
                         f"with regular problem solving, you can quickly bridge the gap!"
                     )
                 elif difficulty_level == "hard" and student_avg_pct <= 45.0:
                     interpretation = (
-                        f"This assessment was challenging across the class (Class Avg: {class_avg_pct:.0f}%). "
+                        f"This assessment was challenging across the semester batch (Semester Avg: {class_avg_pct:.0f}%). "
                         f"Your score of {student_avg_pct:.0f}% reflects the difficulty level of the paper. "
                         f"Stay focused and practice previous question papers to build confidence."
                     )
                 elif student_avg_pct >= 80.0:
                     interpretation = (
                         f"Outstanding performance! You scored {student_avg_pct:.0f}% "
-                        f"(Class Avg: {class_avg_pct:.0f}%). Keep up the great work and maintain this momentum!"
+                        f"(Semester Avg: {class_avg_pct:.0f}%). Keep up the great work and maintain this momentum!"
                     )
                 elif student_avg_pct >= class_avg_pct:
                     interpretation = (
-                        f"Well done! You are performing above the class average ({student_avg_pct:.0f}% vs {class_avg_pct:.0f}%). "
+                        f"Well done! You are performing above the semester average ({student_avg_pct:.0f}% vs {class_avg_pct:.0f}%). "
                         f"Keep practicing regularly to secure top grades."
                     )
                 else:
                     interpretation = (
-                        f"Your score of {student_avg_pct:.0f}% is near the class average ({class_avg_pct:.0f}%). "
+                        f"Your score of {student_avg_pct:.0f}% is near the semester average ({class_avg_pct:.0f}%). "
                         f"A little dedicated revision before the next assessment will help you push into the top tier."
                     )
 
         if not interpretation:
             if not valid_stu:
-                interpretation = f"Class average is {class_avg_pct:.0f}%. Enter your marks in Padikkunnundo to compare your performance and get tailored guidance."
+                interpretation = f"Semester average is {class_avg_pct:.0f}%. Enter your marks in Padikkunnundo to compare your performance and get tailored guidance."
             else:
-                interpretation = f"Overall class average is {class_avg_pct:.0f}%, indicating a {difficulty.lower()} assessment level."
+                interpretation = f"Overall semester average is {class_avg_pct:.0f}%, indicating a {difficulty.lower()} assessment level."
 
         return {
             'difficulty': difficulty,

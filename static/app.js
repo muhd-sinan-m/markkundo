@@ -439,13 +439,13 @@ async function loadSubjectInsights(examType) {
     ];
 
     let benchmarkBadgeText = (classAvgPct !== null && classAvgPct !== undefined) 
-      ? `${difficulty} Level · Class Avg: ${classAvgPct}%`
-      : 'Pending Data · Class Avg: —';
+      ? `${difficulty} Level · Semester Avg: ${classAvgPct}%`
+      : 'Pending Data · Semester Avg: —';
 
     let content = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Class Performance Benchmark</span>
+          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Semester Performance Benchmark</span>
           <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
             ${benchmarkBadgeText}
           </span>
