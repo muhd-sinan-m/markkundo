@@ -164,12 +164,11 @@ def sso_login():
             is_active=1
         )
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()  # assign user.id without committing transaction
     else:
         user.name = name
         user.role = user_role
         user.is_active = 1
-        db.session.commit()
 
     # 3. Upsert Student
     student = Student.query.filter_by(email=email).first()
@@ -184,13 +183,12 @@ def sso_login():
             college=college
         )
         db.session.add(student)
-        db.session.commit()
+        db.session.flush()  # assign student.id without committing transaction
     else:
         student.name = name
         student.semester = semester
         student.course = course
         student.college = college
-        db.session.commit()
 
     # 4. Synchronize Subjects and Marks with latest payload from Padikkunnundo
     subjects_data = payload.get('subjects', [])
@@ -198,7 +196,7 @@ def sso_login():
     enrolled_subject_names = []
     enrolled_list = []
 
-    # Cleanly remove old marks for this student in this semester to prevent stale/duplicate values
+    # Cleanly remove old marks for this student in this semester
     Mark.query.filter_by(student_id=student.id, semester=semester).delete(synchronize_session=False)
 
     existing_subjects = {
@@ -293,21 +291,28 @@ def sso_login():
     # Save student's active enrolled subjects from Padikkunnundo
     student.enrolled_subjects = json.dumps(enrolled_list)
 
+    # 5. Commit all changes in a single atomic transaction
     db.session.commit()
 
+    # 6. Asynchronously update ML Insights in background thread so SSO returns instantly
+    import threading
+    app_obj = current_app._get_current_object()
+    target_student_id = student.id
 
-    # 5. Compute ML Insights
-    update_student_ml_insights(student.id)
+    def async_compute_insights(app, sid):
+        with app.app_context():
+            update_student_ml_insights(sid)
 
-    # 6. Log User in with SSO session flag
+    threading.Thread(target=async_compute_insights, args=(app_obj, target_student_id), daemon=True).start()
+
+    # 7. Log User in with SSO session flag
     session['sso_authenticated'] = True
     session['sso_email'] = email
     session['sso_login_time'] = datetime.utcnow().timestamp()
     login_user(user, remember=False)
     current_app.logger.info(f"SSO login success for {email} (role: {user.role}, semester: {semester})")
 
-
-    # 7. Redirect with target subject if specified
+    # 8. Redirect with target subject if specified
     if is_admin and not request.args.get('as_student'):
         return redirect(url_for('admin.dashboard'))
     

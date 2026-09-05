@@ -1,9 +1,12 @@
 // app.js — Dynamic Student Dashboard Logic for markkundo
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadStudentSubjects();
-  await loadExamsData();
-  await loadNotifications();
+  // Load initial student dashboard data concurrently in parallel
+  await Promise.all([
+    loadStudentSubjects(),
+    loadExamsData(),
+    loadNotifications()
+  ]);
 
   // If a target subject was passed via SSO or query param, select it
   const urlParams = new URLSearchParams(window.location.search);
