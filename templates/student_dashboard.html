@@ -38,7 +38,7 @@
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
             <rect x="14" y="14" width="7" height="7" rx="1.5" />
           </svg>
-          Dashboard
+          <span class="nav-tab-label">Dashboard</span>
         </button>
         <button class="nav-tab" id="tab-schedule" role="tab" aria-selected="false" onclick="switchTab('schedule')">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -47,7 +47,7 @@
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          Study Schedule & Priorities
+          <span class="nav-tab-label">Study Schedule & Priorities</span>
         </button>
       </div>
 
@@ -137,7 +137,7 @@
               <div class="overall-score-box">
                 <div>
                   <div class="overall-score-label">Overall Mastery</div>
-                  <div class="overall-score-val" id="overallScoreDisplay">0%</div>
+                  <div class="overall-score-val" id="overallScoreDisplay">—</div>
                 </div>
                 <div style="text-align: right;">
                   <span class="badge badge-success" id="overallBadge">Synchronized</span>
@@ -187,7 +187,6 @@
                     <option value="LD">Exam: LD</option>
                     <option value="CP">Exam: CP</option>
                     <option value="SEA1">Exam: SEA1</option>
-                    <option value="SEA2">Exam: SEA2</option>
                   </select>
                 </div>
               </div>
@@ -195,7 +194,7 @@
               <div class="metric-tiles">
                 <div class="metric-tile">
                   <div class="metric-tile-label">Your Average</div>
-                  <div class="metric-tile-value" style="color: var(--primary);" id="avgScoreVal">0%</div>
+                  <div class="metric-tile-value" style="color: var(--primary);" id="avgScoreVal">—</div>
                   <div class="metric-tile-sub">Current assessment aggregate</div>
                 </div>
                 <div class="metric-tile">
@@ -205,7 +204,7 @@
                 </div>
                 <div class="metric-tile">
                   <div class="metric-tile-label">Cohort Delta</div>
-                  <div class="metric-tile-value" id="improvementVal">0%</div>
+                  <div class="metric-tile-value" id="improvementVal">—</div>
                   <div class="metric-tile-sub">Relative performance variance</div>
                 </div>
               </div>
@@ -250,7 +249,6 @@
             <button class="exam-tab" onclick="switchExamTab(this, 'LD')">LD</button>
             <button class="exam-tab" onclick="switchExamTab(this, 'CP')">CP</button>
             <button class="exam-tab" onclick="switchExamTab(this, 'SEA1')">SEA1</button>
-            <button class="exam-tab" onclick="switchExamTab(this, 'SEA2')">SEA2</button>
           </div>
           <div id="examResultsPanel">
             <div class="focus-row-placeholder">Loading subject assessments...</div>

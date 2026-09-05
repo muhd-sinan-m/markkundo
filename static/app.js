@@ -76,28 +76,38 @@ async function loadExamsData() {
     // Calculate Overall Score across all marks in DB
     let totalScore = 0;
     let totalMax = 0;
+    let hasAnyMarks = false;
+
     examTypes.forEach(type => {
       const exam = cachedExamsData[type];
       if (exam && exam.marks) {
         exam.marks.forEach(m => {
-          totalScore += Number(m.score) || 0;
-          totalMax += Number(m.max) || 100;
+          if (m.score !== null && m.score !== undefined && !isNaN(Number(m.score))) {
+            totalScore += Number(m.score);
+            totalMax += Number(m.max) || 100;
+            hasAnyMarks = true;
+          }
         });
       }
     });
 
-    const overallPct = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
     const overallDisplay = document.getElementById('overallScoreDisplay');
-    if (overallDisplay) overallDisplay.textContent = `${overallPct}%`;
-
     const readinessBar = document.getElementById('readinessProgressBar');
-    if (readinessBar) readinessBar.style.width = `${Math.min(overallPct, 100)}%`;
-
     const readinessScoreVal = document.getElementById('readinessScoreVal');
-    if (readinessScoreVal) {
-      if (overallPct >= 75) readinessScoreVal.textContent = 'High Mastery';
-      else if (overallPct >= 50) readinessScoreVal.textContent = 'Steady Progress';
-      else readinessScoreVal.textContent = 'Action Needed';
+
+    if (!hasAnyMarks || totalMax === 0) {
+      if (overallDisplay) overallDisplay.innerHTML = '<span style="font-size: 15px; font-weight: 700; color: var(--amber);">Enter marks</span>';
+      if (readinessBar) readinessBar.style.width = '0%';
+      if (readinessScoreVal) readinessScoreVal.textContent = 'Enter marks';
+    } else {
+      const overallPct = Math.round((totalScore / totalMax) * 100);
+      if (overallDisplay) overallDisplay.textContent = `${overallPct}%`;
+      if (readinessBar) readinessBar.style.width = `${Math.min(overallPct, 100)}%`;
+      if (readinessScoreVal) {
+        if (overallPct >= 75) readinessScoreVal.textContent = 'High Mastery';
+        else if (overallPct >= 50) readinessScoreVal.textContent = 'Steady Progress';
+        else readinessScoreVal.textContent = 'Action Needed';
+      }
     }
 
     // Render initial active exam tab (default ISA or first available)
@@ -138,7 +148,7 @@ async function switchExamTab(btn, examType) {
           <div style="font-size: 12.5px;">Scores will appear here as soon as assessments are synced from Padikkunnundo.</div>
         </div>
       `;
-      updateMetricTiles(examType, 0, null, 0);
+      updateMetricTiles(examType, null, null, null);
       loadSubjectInsights(examType);
       return;
     }
@@ -148,30 +158,53 @@ async function switchExamTab(btn, examType) {
     const cardsHtml = examData.marks
       .filter(m => !subjectFilter || m.subject.toLowerCase().includes(subjectFilter))
       .map(m => {
-        const score = Number(m.score) || 0;
+        const isEntered = (m.score !== null && m.score !== undefined && !isNaN(Number(m.score)));
+        const score = isEntered ? Number(m.score) : null;
         const max = Number(m.max) || 100;
-        const pct = max > 0 ? Math.round((score / max) * 100) : 0;
+        const pct = (isEntered && max > 0) ? Math.round((score / max) * 100) : null;
 
         let badgeClass = 'badge-primary';
         let badgeLabel = 'Proficient';
         let barColor = 'linear-gradient(90deg, #4f46e5, #0284c7)';
+        let scoreHtml = '';
+        let pctHtml = '';
+        let barWidth = 0;
 
-        if (pct >= 85) {
+        if (!isEntered) {
+          badgeClass = 'badge-warning';
+          badgeLabel = 'Enter Marks';
+          barColor = 'var(--amber)';
+          barWidth = 0;
+          scoreHtml = `<div class="subject-card-score" style="font-size: 14px; font-weight: 700; color: var(--amber);">Enter marks</div>`;
+          pctHtml = `<div class="subject-card-pct" style="font-size: 11.5px; color: var(--text-dim);">Pending</div>`;
+        } else if (pct >= 85) {
           badgeClass = 'badge-success';
           badgeLabel = 'Outstanding';
           barColor = 'linear-gradient(90deg, #059669, #10b981)';
+          barWidth = Math.min(pct, 100);
+          scoreHtml = `<div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>`;
+          pctHtml = `<div class="subject-card-pct">${pct}%</div>`;
         } else if (pct >= 60) {
           badgeClass = 'badge-primary';
           badgeLabel = 'Strong';
           barColor = 'linear-gradient(90deg, #4f46e5, #0284c7)';
+          barWidth = Math.min(pct, 100);
+          scoreHtml = `<div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>`;
+          pctHtml = `<div class="subject-card-pct">${pct}%</div>`;
         } else if (pct >= 40) {
           badgeClass = 'badge-warning';
           badgeLabel = 'Developing';
           barColor = 'linear-gradient(90deg, #d97706, #f59e0b)';
+          barWidth = Math.min(pct, 100);
+          scoreHtml = `<div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>`;
+          pctHtml = `<div class="subject-card-pct">${pct}%</div>`;
         } else {
           badgeClass = 'badge-danger';
           badgeLabel = 'Needs Focus';
           barColor = 'linear-gradient(90deg, #e11d48, #f43f5e)';
+          barWidth = Math.min(pct, 100);
+          scoreHtml = `<div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>`;
+          pctHtml = `<div class="subject-card-pct">${pct}%</div>`;
         }
 
         return `
@@ -182,13 +215,13 @@ async function switchExamTab(btn, examType) {
                 <div class="subject-card-semester">${m.semester ? `Semester ${m.semester}` : 'Core Subject'} · ${examType}</div>
               </div>
               <div class="subject-card-score-box">
-                <div class="subject-card-score">${score} <span style="font-size: 12px; color: var(--text-dim); font-weight: 500;">/ ${max}</span></div>
-                <div class="subject-card-pct">${pct}%</div>
+                ${scoreHtml}
+                ${pctHtml}
               </div>
             </div>
 
             <div class="progress-track">
-              <div class="progress-bar" style="width: ${Math.min(pct, 100)}%; background: ${barColor};"></div>
+              <div class="progress-bar" style="width: ${barWidth}%; background: ${barColor};"></div>
             </div>
 
             <div class="subject-card-footer">
@@ -225,13 +258,26 @@ async function fetchClassMetrics(examType) {
       const classScoreVal = document.getElementById('classScoreVal');
       const improvementVal = document.getElementById('improvementVal');
 
-      if (avgScoreVal) avgScoreVal.textContent = `${data.student_avg || 0}%`;
-      if (classScoreVal) classScoreVal.textContent = data.class_avg !== undefined ? `${data.class_avg}%` : '—';
+      if (avgScoreVal) {
+        if (data.student_avg === null || data.student_avg === undefined) {
+          avgScoreVal.textContent = 'Enter marks';
+          avgScoreVal.style.fontSize = '16px';
+        } else {
+          avgScoreVal.textContent = `${data.student_avg}%`;
+          avgScoreVal.style.fontSize = '';
+        }
+      }
+      if (classScoreVal) classScoreVal.textContent = (data.class_avg !== undefined && data.class_avg !== null) ? `${data.class_avg}%` : '—';
 
-      const gap = (data.student_avg || 0) - (data.class_avg || 0);
       if (improvementVal) {
-        improvementVal.textContent = gap >= 0 ? `+${gap.toFixed(1)}%` : `${gap.toFixed(1)}%`;
-        improvementVal.style.color = gap >= 0 ? 'var(--emerald)' : 'var(--rose)';
+        if (data.student_avg === null || data.student_avg === undefined) {
+          improvementVal.textContent = '—';
+          improvementVal.style.color = 'var(--text-dim)';
+        } else {
+          const gap = Number(data.student_avg) - Number(data.class_avg || 0);
+          improvementVal.textContent = gap >= 0 ? `+${gap.toFixed(1)}%` : `${gap.toFixed(1)}%`;
+          improvementVal.style.color = gap >= 0 ? 'var(--emerald)' : 'var(--rose)';
+        }
       }
     }
   } catch (e) {
@@ -244,11 +290,24 @@ function updateMetricTiles(examType, studentAvg, classAvg, improvement) {
   const classScoreVal = document.getElementById('classScoreVal');
   const improvementVal = document.getElementById('improvementVal');
 
-  if (avgScoreVal) avgScoreVal.textContent = `${studentAvg}%`;
+  if (avgScoreVal) {
+    if (studentAvg === null || studentAvg === undefined) {
+      avgScoreVal.textContent = 'Enter marks';
+      avgScoreVal.style.fontSize = '16px';
+    } else {
+      avgScoreVal.textContent = `${studentAvg}%`;
+      avgScoreVal.style.fontSize = '';
+    }
+  }
   if (classScoreVal) classScoreVal.textContent = classAvg !== null ? `${classAvg}%` : '—';
   if (improvementVal) {
-    improvementVal.textContent = `${improvement}%`;
-    improvementVal.style.color = improvement >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    if (improvement === null || improvement === undefined) {
+      improvementVal.textContent = '—';
+      improvementVal.style.color = 'var(--text-dim)';
+    } else {
+      improvementVal.textContent = `${improvement}%`;
+      improvementVal.style.color = improvement >= 0 ? 'var(--emerald)' : 'var(--rose)';
+    }
   }
 }
 
@@ -381,70 +440,172 @@ async function markAllAsRead() {
   }
 }
 
-// 9. Load Priority Subjects & Schedule (clean, zero emojis)
+// 9. Load Priority Subjects & Schedule (Dynamic credit-weighted study hours & mark-based priority)
 async function loadPrioritySchedule() {
   const container = document.getElementById('prioritySubjectsContainer');
   if (!container) return;
 
   try {
     const [subRes, examRes, insightRes] = await Promise.all([
-      fetch('/api/student/subjects'),
-      fetch('/api/student/exams'),
-      fetch('/api/student/insights/ISA')
+      fetch('/api/student/subjects', { cache: 'no-store' }),
+      fetch('/api/student/exams', { cache: 'no-store' }),
+      fetch('/api/student/insights/ISA', { cache: 'no-store' })
     ]);
 
     const subjects = await subRes.json();
+    let examsData = {};
+    if (examRes.ok) {
+      examsData = await examRes.json();
+    }
     let insight = {};
     if (insightRes.ok) {
       insight = await insightRes.json();
     }
 
-    const weakSubjects = insight.weak_subjects || [];
-    
-    if (subjects.length === 0) {
+    if (!subjects || subjects.length === 0) {
       container.innerHTML = '<div class="card" style="padding: 28px; text-align: center; color: var(--text-muted);">No subjects found for this active semester.</div>';
       return;
     }
 
-    // Sort subjects: Weakest / highest priority first
-    const sorted = subjects.map(s => {
-      let isHighPriority = weakSubjects.includes(s.name);
-      let explanation = isHighPriority 
-        ? `ML Analysis flagged a performance variance in ${s.name}. Dedicated study sessions and practice papers are strongly recommended.`
-        : `Performance in ${s.name} is on track. Maintain standard weekly revision to reinforce core concepts.`;
-      
+    // Helper: Calculate dynamic target study hours based on credits and marks
+    function calculateDynamicTargetHours(credits, avgPct) {
+      const cr = Number(credits) || 4;
+      if (avgPct === null) {
+        if (cr >= 5) return '6-8 hrs/week';
+        if (cr === 4) return '5-6 hrs/week';
+        if (cr === 3) return '4-5 hrs/week';
+        return '3-4 hrs/week';
+      }
+      if (avgPct < 50) {
+        // Low marks -> intensive study needed before SEA2
+        if (cr >= 5) return '8-10 hrs/week';
+        if (cr === 4) return '7-8 hrs/week';
+        if (cr === 3) return '5-6 hrs/week';
+        return '4-5 hrs/week';
+      } else if (avgPct < 75) {
+        // Moderate marks
+        if (cr >= 5) return '5-7 hrs/week';
+        if (cr === 4) return '4-5 hrs/week';
+        if (cr === 3) return '3-4 hrs/week';
+        return '2-3 hrs/week';
+      } else {
+        // High marks -> maintenance revision
+        if (cr >= 5) return '3-4 hrs/week';
+        if (cr === 4) return '2-3 hrs/week';
+        if (cr === 3) return '2 hrs/week';
+        return '1-2 hrs/week';
+      }
+    }
+
+    // Compute marks and priority for each subject
+    const subjectItems = subjects.map(s => {
+      let totalScore = 0;
+      let totalMax = 0;
+      let markCount = 0;
+
+      Object.keys(examsData).forEach(examKey => {
+        const exam = examsData[examKey];
+        if (exam && exam.marks) {
+          const m = exam.marks.find(item => item.subject && item.subject.toLowerCase() === s.name.toLowerCase());
+          if (m && m.score !== null && m.score !== undefined && !isNaN(Number(m.score))) {
+            totalScore += Number(m.score);
+            totalMax += Number(m.max) || 100;
+            markCount++;
+          }
+        }
+      });
+
+      const hasMarks = (totalMax > 0 && markCount > 0);
+      const avgPct = hasMarks ? Math.round((totalScore / totalMax) * 100) : null;
+      const credits = Number(s.credits) || 4;
+      const targetHours = calculateDynamicTargetHours(credits, avgPct);
+
+      let priority = 'STABLE MASTERY';
+      let badgeClass = 'badge-success';
+      let borderLeftColor = 'var(--emerald)';
+      let rankOrder = 4;
+      let explanation = '';
+      let scoreBadgeHtml = '';
+
+      if (avgPct === null) {
+        priority = 'NO MARKS ENTERED';
+        badgeClass = 'badge-warning';
+        borderLeftColor = 'var(--amber)';
+        rankOrder = 3;
+        explanation = `No evaluation marks entered yet for ${s.name}. Enter marks in Padikkunnundo to activate personalized SEA2 recommendations.`;
+        scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--amber); font-weight: 600;">Status: Enter marks in Padikkunnundo</span>`;
+      } else if (avgPct < 40) {
+        priority = 'CRITICAL PRIORITY';
+        badgeClass = 'badge-danger';
+        borderLeftColor = 'var(--rose)';
+        rankOrder = 1;
+        explanation = `Current evaluation aggregate is ${avgPct}%. With ${credits} course credits, intensive topic revision and targeted practice are urgently required before SEA2.`;
+        scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--rose); font-weight: 700;">Score: ${avgPct}% (Critical Focus)</span>`;
+      } else if (avgPct < 50) {
+        priority = 'HIGH PRIORITY';
+        badgeClass = 'badge-danger';
+        borderLeftColor = 'var(--rose)';
+        rankOrder = 2;
+        explanation = `Current evaluation aggregate is ${avgPct}%. With ${credits} course credits, prioritize problem solving to bridge foundational gaps before SEA2.`;
+        scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--rose); font-weight: 700;">Score: ${avgPct}% (Action Needed)</span>`;
+      } else if (avgPct < 75) {
+        priority = 'MODERATE PRIORITY';
+        badgeClass = 'badge-warning';
+        borderLeftColor = 'var(--amber)';
+        rankOrder = 4;
+        explanation = `Current evaluation aggregate is ${avgPct}%. Maintaining structured weekly study sessions will help elevate performance above the cohort benchmark in SEA2.`;
+        scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--amber); font-weight: 600;">Score: ${avgPct}% (Developing)</span>`;
+      } else {
+        priority = 'STABLE MASTERY';
+        badgeClass = 'badge-success';
+        borderLeftColor = 'var(--emerald)';
+        rankOrder = 5;
+        explanation = `Strong performance at ${avgPct}%. Maintain standard weekly practice to reinforce mastery for SEA2.`;
+        scoreBadgeHtml = `<span style="font-size: 11.5px; color: var(--emerald); font-weight: 600;">Score: ${avgPct}% (High Mastery)</span>`;
+      }
+
       return {
         name: s.name,
         program: s.program || 'BCA',
         semester: s.semester,
-        credits: s.credits || 4,
-        numPapers: s.num_papers || 0,
-        priority: isHighPriority ? 'HIGH PRIORITY' : 'STABLE MASTERY',
-        badgeClass: isHighPriority ? 'badge-danger' : 'badge-success',
+        credits: credits,
+        avgPct: avgPct,
+        rankOrder: rankOrder,
+        priority: priority,
+        badgeClass: badgeClass,
+        borderLeftColor: borderLeftColor,
         explanation: explanation,
-        hoursPerWeek: isHighPriority ? '6-8 hrs/week' : '3-4 hrs/week'
+        scoreBadgeHtml: scoreBadgeHtml,
+        targetHours: targetHours
       };
-    }).sort((a, b) => (a.priority === 'HIGH PRIORITY' ? -1 : 1));
+    });
 
-    container.innerHTML = sorted.map(item => `
-      <div class="card" style="display: flex; flex-direction: column; gap: 12px; border-left: 4px solid ${item.priority === 'HIGH PRIORITY' ? 'var(--rose)' : 'var(--emerald)'};">
+    // Sort: Lowest score / highest priority first
+    subjectItems.sort((a, b) => {
+      if (a.rankOrder !== b.rankOrder) return a.rankOrder - b.rankOrder;
+      if (a.avgPct !== null && b.avgPct !== null) return a.avgPct - b.avgPct;
+      return 0;
+    });
+
+    container.innerHTML = subjectItems.map(item => `
+      <div class="card" style="display: flex; flex-direction: column; gap: 12px; border-left: 4px solid ${item.borderLeftColor};">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-main);">${item.name}</h3>
             <span class="badge ${item.badgeClass}">${item.priority}</span>
           </div>
           <span style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-subtle); border: 1px solid rgba(99, 102, 241, 0.2); padding: 4px 12px; border-radius: var(--radius-full);">
-            Target: ${item.hoursPerWeek}
+            Target: ${item.targetHours}
           </span>
         </div>
         <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
           ${item.explanation}
         </p>
-        <div style="display: flex; gap: 18px; font-size: 11.5px; color: var(--text-dim); border-top: 1px solid var(--border-glass-subtle); padding-top: 10px; margin-top: 2px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 18px; font-size: 11.5px; color: var(--text-dim); border-top: 1px solid var(--border-glass-subtle); padding-top: 10px; margin-top: 2px; flex-wrap: wrap; align-items: center;">
           <span>Program: <strong style="color: var(--text-body);">${item.program}</strong></span>
           <span>Semester: <strong style="color: var(--text-body);">${item.semester}</strong></span>
-          <span>Credits: <strong style="color: var(--text-body);">${item.credits}</strong></span>
-          <span>Past Papers: <strong style="color: var(--text-body);">${item.numPapers} available</strong></span>
+          <span>Credits: <strong style="color: var(--text-body);">${item.credits} Credits</strong></span>
+          ${item.scoreBadgeHtml}
         </div>
       </div>
     `).join('');
@@ -469,3 +630,4 @@ function switchTab(tabName) {
     loadPrioritySchedule();
   }
 }
+

@@ -1077,3 +1077,147 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ── Comprehensive Responsive Media Queries ────────────────────────────── */
+@media (max-width: 1024px) {
+  .body-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .top-nav {
+    padding: 10px 20px;
+    gap: 12px;
+  }
+
+  .main-content {
+    padding: 18px 20px;
+  }
+
+  .search-pill input {
+    width: 110px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .nav-logo {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  .nav-right {
+    order: 2;
+    margin-left: auto;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .search-pill {
+    display: none;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .user-avatar-area {
+    padding: 3px 6px 3px 3px;
+    gap: 6px;
+  }
+
+  .nav-tabs {
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+    margin-top: 4px;
+    padding: 3px;
+    border-radius: var(--radius-md);
+  }
+
+  .nav-tab {
+    flex: 1 1 50%;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-tab svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .greeting-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .greeting-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .metric-tiles {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .subject-mark-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-nav {
+    padding: 8px 12px;
+  }
+
+  .nav-wordmark {
+    font-size: 17px;
+  }
+
+  .nav-logo-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .nav-tab {
+    padding: 7px 6px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .nav-tab svg {
+    display: none;
+  }
+
+  .exam-tabs-container {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .exam-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-content {
+    padding: 14px 12px;
+  }
+}

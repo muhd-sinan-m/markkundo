@@ -109,11 +109,11 @@ def get_exams():
     if not all_marks:
         all_marks = Mark.query.filter_by(student_id=student.id).all()
 
-    exam_types = ['ISA', 'LB', 'LD', 'CP', 'SEA1', 'SEA2']
+    exam_types = ['ISA', 'LB', 'LD', 'CP', 'SEA1']
     
-    # Also discover any custom exam types present in student's marks
+    # Also discover any custom exam types present in student's marks (excluding SEA2)
     for m in all_marks:
-        if m.exam_type and m.exam_type not in exam_types:
+        if m.exam_type and m.exam_type not in exam_types and m.exam_type != 'SEA2':
             exam_types.append(m.exam_type)
 
 
@@ -290,7 +290,7 @@ def get_class_rank(exam_type):
     student_avg_res = q.scalar()
 
     if student_avg_res is None:
-        return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': 0, 'class_avg': 0})
+        return jsonify({'rank': 0, 'percentile': 0, 'total': 0, 'student_avg': None, 'class_avg': 0})
 
     student_avg = float(student_avg_res)
 

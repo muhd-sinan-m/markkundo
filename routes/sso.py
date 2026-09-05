@@ -23,7 +23,7 @@ def is_admin_email(email):
 def update_student_ml_insights(student_id):
     """Generate or update ML insights for a student based on current DB marks in batch"""
     try:
-        exams = ['ISA', 'LB', 'LD', 'CP', 'SEA1', 'SEA2']
+        exams = ['ISA', 'LB', 'LD', 'CP', 'SEA1']
         
         # Batch preload all marks for this student
         all_student_marks = Mark.query.filter_by(student_id=student_id).all()
@@ -273,6 +273,8 @@ def sso_login():
                     continue
 
                 exam_type = exam_key.upper().strip()
+                if exam_type == 'SEA2':
+                    continue
                 max_score = get_max_score_for_subject_and_exam(credit_val, exam_type)
 
                 new_marks_to_add.append(Mark(
