@@ -35,7 +35,7 @@ def login():
 
     
     error_msg = error_messages.get(error_code)
-    padikkunnundo_url = os.environ.get('PADIKKUNNUNDO_URL', 'https://padikkunundo.app')
+    padikkunnundo_url = os.environ.get('PADIKKUNNUNDO_URL', 'https://padikkunnundo.app')
     
     return render_template(
         'login.html',

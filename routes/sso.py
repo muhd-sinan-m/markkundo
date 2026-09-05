@@ -106,7 +106,7 @@ def sso_login():
             sso_secret,
             algorithms=['HS256'],
             audience='markkundo',
-            issuer='padikkunundo',
+            issuer=['padikkunnundo', 'padikkunundo'],
             options={'require': ['sub']}
         )
     except jwt.ExpiredSignatureError:
@@ -338,7 +338,7 @@ def generate_sso_token():
     now = datetime.now(timezone.utc)
     payload = {
         'sub': email,
-        'iss': 'padikkunundo',
+        'iss': 'padikkunnundo',
         'aud': 'markkundo',
         'iat': now,
         'exp': now + timedelta(minutes=5)
