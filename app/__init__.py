@@ -51,6 +51,14 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-markkundo')
     app.config['PERMANENT_SESSION_LIFETIME'] = 7200  # 2 hours max
 
+    # ── Hardened Cookie Security ───────────────────────────────────────────────
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = bool(os.getenv('RENDER') or os.getenv('PRODUCTION') or not app.debug)
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+    app.config['REMEMBER_COOKIE_SECURE'] = bool(os.getenv('RENDER') or os.getenv('PRODUCTION') or not app.debug)
+
     # ── Extensions ─────────────────────────────────────────────────────────────
     db.init_app(app)
     login_manager.init_app(app)
@@ -68,6 +76,17 @@ def create_app():
         return redirect(url_for('auth.login', error='sso_required'))
 
     limiter.init_app(app)
+
+    # ── 429 Rate Limit Handler (Custom for Admin/API) ──────────────────────────
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        from flask import request, jsonify
+        if request.is_json or request.path.startswith('/api/') or request.path.startswith('/admin/'):
+            return jsonify({
+                'error': 'Admin rate limit exceeded. Too many requests. Please wait a moment before trying again.',
+                'code': 429
+            }), 429
+        return "Admin rate limit reached. Please wait a moment before retrying.", 429
 
     # ── Strict SSO Session Verification on Every Request ───────────────────────
     @app.before_request
@@ -99,7 +118,27 @@ def create_app():
             if request.path == '/' or request.path.startswith('/dashboard') or request.path.startswith('/admin'):
                 return redirect(url_for('auth.login', error='sso_required'))
 
+    # ── CSRF Defense for Mutating State Requests ───────────────────────────────
+    @app.before_request
+    def check_csrf():
+        from flask import request, jsonify
+        if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+            # Whitelist SSO callback if needed
+            if request.endpoint in ['sso.sso_login', 'auth.login']:
+                return
 
+            origin = request.headers.get('Origin')
+            referer = request.headers.get('Referer')
+            host = request.host
+
+            if origin:
+                origin_host = origin.split('://')[-1].split('/')[0]
+                if origin_host != host:
+                    return jsonify({'error': 'CSRF verification failed: Untrusted Origin', 'code': 403}), 403
+            elif referer:
+                referer_host = referer.split('://')[-1].split('/')[0]
+                if referer_host != host:
+                    return jsonify({'error': 'CSRF verification failed: Untrusted Referer', 'code': 403}), 403
 
     # ── Security & Caching headers on every response ───────────────────────────
     @app.after_request
@@ -108,6 +147,17 @@ def create_app():
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+        # Content Security Policy (CSP)
+        csp_policy = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "img-src 'self' data: https: blob:; "
+            "connect-src 'self';"
+        )
+        response.headers['Content-Security-Policy'] = csp_policy
 
         from flask import request
         if request.path.startswith('/static/'):

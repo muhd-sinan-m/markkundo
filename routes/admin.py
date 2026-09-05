@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user, login_user
-from app import db
+from app import db, limiter
 from app.models import User, Student, Mark, MLInsight, Notification
 from app.ml.ml_engine import StudyFocusRecommender, PerformanceClusterer, AnomalyDetector
 import json
@@ -9,6 +9,9 @@ import csv
 from io import StringIO
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+# Rate limit exclusively for admin endpoints
+limiter.limit("60 per minute")(bp)
 
 def admin_required(f):
     """Decorator: only admin role may access this endpoint.
