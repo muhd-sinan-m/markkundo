@@ -126,22 +126,31 @@
       <!-- Cluster Distribution -->
       <div class="card" style="margin-bottom: 24px;">
         <h3 style="margin-bottom: 16px;">Cluster Distribution - <span id="clusterExamLabel">ISA</span></h3>
-        <div style="display: flex; gap: 16px; align-items: flex-end;">
-          <div style="flex: 1;">
+        <div style="display: flex; gap: 32px; align-items: center; flex-wrap: wrap;">
+          <div style="width: 170px; height: 170px; position: relative; flex-shrink: 0; margin: 0 auto;">
             <canvas id="clusterChart"></canvas>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-              <div style="width: 12px; height: 12px; background: var(--grad-start); border-radius: 2px;"></div>
-              <span>Topper: <strong id="topperCount">0</strong></span>
+          <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 220px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #eef2ff; border-radius: 8px; border: 1px solid #c7d2fe; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 12px; height: 12px; background: #4f46e5; border-radius: 3px;"></div>
+                <span style="font-weight: 600; color: #3730a3;">Topper</span>
+              </div>
+              <strong id="topperCount" style="font-size: 15px; color: #312e81;">0</strong>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-              <div style="width: 12px; height: 12px; background: #9CA3AF; border-radius: 2px;"></div>
-              <span>Average: <strong id="averageCount">0</strong></span>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f1f5f9; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 12px; height: 12px; background: #64748b; border-radius: 3px;"></div>
+                <span style="font-weight: 600; color: #475569;">Average</span>
+              </div>
+              <strong id="averageCount" style="font-size: 15px; color: #1e293b;">0</strong>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-              <div style="width: 12px; height: 12px; background: #F472B6; border-radius: 2px;"></div>
-              <span>At-Risk: <strong id="atRiskCount">0</strong></span>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff1f2; border-radius: 8px; border: 1px solid #fecdd3; font-size: 13px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 12px; height: 12px; background: #e11d48; border-radius: 3px;"></div>
+                <span style="font-weight: 600; color: #9f1239;">At-Risk</span>
+              </div>
+              <strong id="atRiskCount" style="font-size: 15px; color: #881337;">0</strong>
             </div>
           </div>
         </div>

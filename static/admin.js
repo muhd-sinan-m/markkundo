@@ -221,14 +221,27 @@ async function loadClusterDistribution(examType) {
         labels: ['Topper', 'Average', 'At-Risk'],
         datasets: [{
           data: [data.Topper || 0, data.Average || 0, data['At-Risk'] || 0],
-          backgroundColor: ['#4f46e5', '#9CA3AF', '#F472B6'],
-          borderWidth: 0
+          backgroundColor: ['#4f46e5', '#64748b', '#e11d48'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const val = context.raw || 0;
+                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                return ` ${context.label}: ${val} (${pct}%)`;
+              }
+            }
+          }
         }
       }
     });
