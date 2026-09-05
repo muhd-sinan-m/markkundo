@@ -492,12 +492,12 @@ body::before {
 /* ── Body Grid Section ─────────────────────────────────────────────────── */
 .body-section {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 22px;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
   margin-bottom: 28px;
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 1080px) {
   .body-section {
     grid-template-columns: 1fr;
   }
@@ -507,7 +507,7 @@ body::before {
 .column-left {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .card {
@@ -525,7 +525,7 @@ body::before {
   border-color: #cbd5e1;
 }
 
-/* Student Hero Card with Logo Branding */
+/* Student Hero Card with Large Logo Branding */
 .student-hero-card {
   background: #ffffff;
   border: 1px solid var(--border-glass);
@@ -540,20 +540,28 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  border: 1px solid var(--border-glass);
+  padding: 20px 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #eef2ff 50%, #f0fdf4 100%);
+  border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  min-height: 220px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
 .student-hero-logo {
-  max-width: 140px;
-  max-height: 54px;
-  width: auto;
+  width: 100%;
+  max-width: 320px;
   height: auto;
+  max-height: 190px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.08));
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.08));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.student-hero-card:hover .student-hero-logo {
+  transform: scale(1.02);
 }
 
 .student-hero-header {
