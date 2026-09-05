@@ -636,9 +636,12 @@ async function loadPrioritySchedule() {
             <h3 style="font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-main);">${item.name}</h3>
             <span class="badge ${item.badgeClass}">${item.priority}</span>
           </div>
-          <span style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-subtle); border: 1px solid rgba(99, 102, 241, 0.2); padding: 4px 12px; border-radius: var(--radius-full);">
-            Target: ${item.targetHours}
-          </span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
+            <span style="font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-subtle); border: 1px solid rgba(99, 102, 241, 0.2); padding: 4px 12px; border-radius: var(--radius-full);">
+              Target: ${item.targetHours}
+            </span>
+            <span style="font-size: 10.5px; color: var(--text-dim); font-style: italic;">NB: not in exam season</span>
+          </div>
         </div>
         <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
           ${item.explanation}
