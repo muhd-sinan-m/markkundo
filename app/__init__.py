@@ -74,9 +74,9 @@ def create_app():
         from flask import request, jsonify, redirect, url_for
         if request.is_json or request.path.startswith('/api/') or request.path.startswith('/admin/api/'):
             return jsonify({
-                'error': 'Unauthorized — Single Sign-On (SSO) via Padikkunnundo is required.',
+                'error': 'Unauthorized — Please log in via Padikkunnundo to access Markkundo.',
                 'code': 401,
-                'sso_required': True
+                'login_required': True
             }), 401
         return redirect(url_for('auth.login', error='sso_required'))
 
@@ -113,9 +113,9 @@ def create_app():
                 session.clear()
                 if request.is_json or request.path.startswith('/api/') or request.path.startswith('/admin/api/'):
                     return jsonify({
-                        'error': 'Unauthorized — Single Sign-On (SSO) via Padikkunnundo is required.',
+                        'error': 'Unauthorized — Please log in via Padikkunnundo to access Markkundo.',
                         'code': 401,
-                        'sso_required': True
+                        'login_required': True
                     }), 401
                 return redirect(url_for('auth.login', error='sso_required'))
         else:
