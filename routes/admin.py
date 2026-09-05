@@ -311,21 +311,41 @@ def run_analysis(exam_type):
         
         db.session.add(insight)
         results['insights_created'] += 1
-        
-        # Create notifications for anomalies
-        for anomaly in anomalies:
-            notif = Notification(
-                student_id=student.id,
-                exam_type=exam_type,
-                message=anomaly['message'],
-                source='ml_engine'
-            )
-            db.session.add(notif)
-            results['notifications_created'] += 1
     
     db.session.commit()
     
     return jsonify(results)
+
+@bp.route('/api/students/<int:student_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_student(student_id):
+    """Delete a student, their marks, insights, and linked user (prevents deleting admin accounts)"""
+    from routes.sso import is_admin_email
+    student = Student.query.get(student_id)
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+
+    # Check if student is an administrator
+    if is_admin_email(student.email):
+        return jsonify({'error': 'Cannot delete administrator account'}), 403
+
+    user_record = User.query.filter_by(email=student.email).first()
+    if user_record and user_record.role == 'admin':
+        return jsonify({'error': 'Cannot delete administrator user'}), 403
+
+    # Cascade delete student's marks and insights
+    Mark.query.filter_by(student_id=student.id).delete(synchronize_session=False)
+    MLInsight.query.filter_by(student_id=student.id).delete(synchronize_session=False)
+    Notification.query.filter_by(student_id=student.id).delete(synchronize_session=False)
+
+    if user_record:
+        db.session.delete(user_record)
+
+    db.session.delete(student)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': f'Student {student.name} deleted successfully'})
 
 @bp.route('/api/at-risk-students/<exam_type>')
 @login_required
@@ -337,6 +357,8 @@ def get_at_risk_students(exam_type):
     result = []
     for insight in insights:
         student = Student.query.get(insight.student_id)
+        if not student:
+            continue
         weak_subjects = json.loads(insight.weak_subjects) if insight.weak_subjects else []
         
         marks = Mark.query.filter_by(student_id=student.id, exam_type=exam_type).all()
@@ -367,21 +389,6 @@ def get_cluster_distribution(exam_type):
     }
     
     return jsonify(distribution)
-
-@bp.route('/api/notifications-log')
-@login_required
-@admin_required
-def get_notifications_log():
-    """Get all ML-generated notifications"""
-    notifications = Notification.query.filter_by(source='ml_engine').order_by(Notification.sent_at.desc()).all()
-    
-    return jsonify([{
-        'id': n.id,
-        'student_name': Student.query.get(n.student_id).name,
-        'message': n.message,
-        'exam': n.exam_type,
-        'timestamp': n.sent_at
-    } for n in notifications])
 
 @bp.route('/api/db-status')
 @login_required

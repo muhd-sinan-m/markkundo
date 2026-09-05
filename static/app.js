@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load initial student dashboard data concurrently in parallel
   await Promise.all([
     loadStudentSubjects(),
-    loadExamsData(),
-    loadNotifications()
+    loadExamsData()
   ]);
 
   // If a target subject was passed via SSO or query param, select it
@@ -359,17 +358,17 @@ async function loadSubjectInsights(examType) {
     };
 
     const tips = [
-      "<strong>Active Retrieval:</strong> Practice previous year exam papers and code snippets without referring to reference notes.",
-      "<strong>Spaced Revision:</strong> Dedicate 30 minutes daily to high-credit subjects before final semester assessments.",
-      "<strong>Targeted Review:</strong> Prioritize key topics where cohort variance is highest to boost overall rank percentile."
+      "<strong>Active Practice:</strong> Practice previous year question patterns and problems without looking at reference solutions.",
+      "<strong>Spaced Revision:</strong> Dedicate regular focused sessions daily to high-credit subjects before semester exams.",
+      "<strong>Targeted Review:</strong> Prioritize core chapters and difficult concepts to maximize subject performance."
     ];
 
     let content = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Cohort Assessment Benchmark</span>
+          <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Class Performance Benchmark</span>
           <span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); ${diffBadgeStyles[difficultyLevel] || diffBadgeStyles['moderate']}">
-            ${difficulty} Examination · Class Avg: ${classAvgPct}%
+            ${difficulty} Level · Class Avg: ${classAvgPct}%
           </span>
         </div>
 
@@ -397,50 +396,7 @@ async function loadSubjectInsights(examType) {
   }
 }
 
-// 8. Notifications toggle and actions
-function toggleNotifPanel() {
-  const panel = document.getElementById('notifPanel');
-  if (panel) panel.classList.toggle('active');
-}
-
-async function loadNotifications() {
-  try {
-    const res = await fetch('/api/student/notifications');
-    if (!res.ok) return;
-    const notifs = await res.json();
-    
-    const badge = document.getElementById('notifBadge');
-    const unread = notifs.filter(n => !n.is_read).length;
-    if (badge) badge.textContent = unread;
-    
-    const list = document.getElementById('notifList');
-    if (list) {
-      if (notifs.length === 0) {
-        list.innerHTML = '<div style="color:var(--text-muted); font-size: 12.5px; padding: 20px; text-align: center;">No new notifications</div>';
-      } else {
-        list.innerHTML = notifs.map(n => `
-          <div class="notif-item" style="border-left: 3px solid ${n.is_read ? 'var(--border-glass)' : 'var(--primary)'};">
-            <div style="color: var(--text-main); font-size: 12.5px; font-weight: 500;">${n.message}</div>
-            <div style="color: var(--text-dim); font-size: 11px; margin-top: 3px;">${n.exam || 'Assessment'} · ${n.timestamp ? new Date(n.timestamp).toLocaleDateString() : 'Recent'}</div>
-          </div>
-        `).join('');
-      }
-    }
-  } catch (err) {
-    console.error('Error loading notifications:', err);
-  }
-}
-
-async function markAllAsRead() {
-  try {
-    await fetch('/api/student/notifications/read-all', { method: 'POST' });
-    await loadNotifications();
-  } catch (err) {
-    console.error('Error marking notifications as read:', err);
-  }
-}
-
-// 9. Load Priority Subjects & Schedule (Dynamic credit-weighted study hours & mark-based priority)
+// 8. Load Priority Subjects & Schedule (Dynamic credit-weighted study hours & mark-based priority)
 async function loadPrioritySchedule() {
   const container = document.getElementById('prioritySubjectsContainer');
   if (!container) return;

@@ -231,47 +231,6 @@ def get_insights(exam_type):
     })
 
 
-@bp.route('/api/student/notifications')
-@login_required
-def get_notifications():
-    """Get student notifications from DB"""
-    student = get_or_create_student()
-    
-    notifications = Notification.query.filter_by(student_id=student.id).order_by(Notification.sent_at.desc()).all()
-    
-    return jsonify([{
-        'id': n.id,
-        'message': n.message,
-        'exam': n.exam_type,
-        'is_read': n.is_read,
-        'timestamp': n.sent_at
-    } for n in notifications])
-
-@bp.route('/api/student/notifications/<int:notif_id>/read', methods=['POST'])
-@login_required
-def mark_notification_read(notif_id):
-    """Mark notification as read"""
-    student = get_or_create_student()
-    notif = Notification.query.filter_by(id=notif_id, student_id=student.id).first()
-    
-    if not notif:
-        return jsonify({'error': 'Not found'}), 404
-    
-    notif.is_read = 1
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
-@bp.route('/api/student/notifications/read-all', methods=['POST'])
-@login_required
-def mark_all_notifications_read():
-    """Mark all notifications as read"""
-    student = get_or_create_student()
-    Notification.query.filter_by(student_id=student.id, is_read=0).update({'is_read': 1})
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
 @bp.route('/api/student/class-rank/<exam_type>')
 @login_required
 def get_class_rank(exam_type):

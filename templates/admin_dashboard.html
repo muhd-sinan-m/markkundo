@@ -34,10 +34,6 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h6"/><path d="M8 9h5"/></svg>
         Enter Marks
       </button>
-      <button class="nav-tab" id="tab-admin-analysis" role="tab" aria-selected="false" onclick="switchAdminTab('analysis')">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="7" width="7" height="14" rx="1"/></svg>
-        Analysis
-      </button>
     </div>
 
 
@@ -216,10 +212,11 @@
                 <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Email</th>
                 <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Reg No</th>
                 <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Semester</th>
+                <th style="padding: 12px; text-align: right; font-size: 12px; font-weight: 600; color: var(--secondary-text);">Actions</th>
               </tr>
             </thead>
             <tbody id="studentsTable">
-              <tr><td colspan="4" style="padding: 12px; text-align: center; color: var(--secondary-text);">Loading...</td></tr>
+              <tr><td colspan="5" style="padding: 12px; text-align: center; color: var(--secondary-text);">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -277,25 +274,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ANALYSIS TAB -->
-    <div class="admin-tab" id="admin-analysis">
-      <div class="greeting-row">
-        <h1>Analysis & Notifications</h1>
-        <p>View ML-generated notifications and alerts</p>
-      </div>
-
-      <div class="card">
-        <h3 style="margin-bottom: 16px;">Notification Log</h3>
-        <div style="max-height: 600px; overflow-y: auto;">
-          <div id="notificationLog" style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="padding: 12px; background: var(--tile-blue); border-radius: 8px; font-size: 12px; color: var(--secondary-text);">
-              No notifications yet
-            </div>
-          </div>
         </div>
       </div>
     </div>

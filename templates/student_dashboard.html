@@ -60,13 +60,6 @@
           </svg>
           <input type="text" placeholder="Search subjects…" aria-label="Search" id="searchInput" />
         </div>
-        <button class="icon-btn" id="notifBellBtn" aria-label="Notifications" onclick="toggleNotifPanel()">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          <span class="notif-badge" id="notifBadge">0</span>
-        </button>
         <div class="user-avatar-area" aria-label="User profile">
           <div class="user-avatar" id="userAvatar">
             {{ (student.name[:2] if student and student.name else (user.name[:2] if user and user.name else 'ST')).upper() }}
@@ -193,19 +186,19 @@
 
               <div class="metric-tiles">
                 <div class="metric-tile">
-                  <div class="metric-tile-label">Your Average</div>
+                  <div class="metric-tile-label">Your Score</div>
                   <div class="metric-tile-value" style="color: var(--primary);" id="avgScoreVal">—</div>
-                  <div class="metric-tile-sub">Current assessment aggregate</div>
+                  <div class="metric-tile-sub">Your average in this exam</div>
                 </div>
                 <div class="metric-tile">
-                  <div class="metric-tile-label">Cohort Average</div>
+                  <div class="metric-tile-label">Class Average</div>
                   <div class="metric-tile-value" id="classScoreVal">—</div>
-                  <div class="metric-tile-sub">Peer baseline benchmark</div>
+                  <div class="metric-tile-sub">Average mark of your class</div>
                 </div>
                 <div class="metric-tile">
-                  <div class="metric-tile-label">Cohort Delta</div>
+                  <div class="metric-tile-label">Vs Class Average</div>
                   <div class="metric-tile-value" id="improvementVal">—</div>
-                  <div class="metric-tile-sub">Relative performance variance</div>
+                  <div class="metric-tile-sub">Difference from class average</div>
                 </div>
               </div>
             </div>
@@ -277,19 +270,6 @@
       </div>
 
     </main>
-
-    <!-- NOTIFICATION SLIDE-OUT PANEL -->
-    <div class="notif-panel" id="notifPanel">
-      <div class="notif-header">
-        <h3>Notifications</h3>
-        <button onclick="toggleNotifPanel()" class="icon-btn" aria-label="Close Notifications"
-          style="width: 30px; height: 30px; border: none; font-size: 14px;">✕</button>
-      </div>
-      <button class="notif-action" onclick="markAllAsRead()">Mark all as read</button>
-      <div class="notif-list" id="notifList">
-        <!-- Notifications will be loaded here -->
-      </div>
-    </div>
   </div>
 
   <!-- SCRIPTS -->
