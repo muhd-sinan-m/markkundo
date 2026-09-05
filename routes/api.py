@@ -70,33 +70,52 @@ def get_student_profile():
 @bp.route('/api/student/subjects')
 @login_required
 def get_student_subjects():
-    """Get subjects for current student's semester from DB"""
+    """Get strictly the subjects the student is currently enrolled in for their active semester"""
     student = get_or_create_student()
+
+    # 1. Primary: Enrolled subjects list synced directly from Padikkunnundo via SSO
+    if student.enrolled_subjects:
+        try:
+            enrolled = json.loads(student.enrolled_subjects)
+            if enrolled and isinstance(enrolled, list):
+                return jsonify(enrolled)
+        except Exception:
+            pass
+
+    # 2. Secondary: Distinct subjects with marks for this student in their current semester
+    marked_subjects = db.session.query(Mark.subject).filter_by(
+        student_id=student.id,
+        semester=student.semester
+    ).distinct().all()
+
+    marked_names = [m[0] for m in marked_subjects]
+    if marked_names:
+        subjects = Subject.query.filter(Subject.name.in_(marked_names), Subject.semester == student.semester).all()
+        if subjects:
+            return jsonify([s.to_dict() for s in subjects])
+
+    # 3. Fallback to semester subjects in DB
     subjects = Subject.query.filter_by(semester=student.semester).all()
-    if not subjects:
-        # Fallback to any subjects with marks for this student
-        marked_subjects = db.session.query(Mark.subject).filter_by(student_id=student.id).distinct().all()
-        marked_names = [m[0] for m in marked_subjects]
-        if marked_names:
-            subjects = Subject.query.filter(Subject.name.in_(marked_names)).all()
-        if not subjects:
-            subjects = Subject.query.all()
-            
     return jsonify([s.to_dict() for s in subjects])
+
 
 @bp.route('/api/student/exams')
 @login_required
 def get_exams():
-    """Get student exam results from DB grouped by exam type"""
+    """Get student exam results from DB strictly for their active semester"""
     student = get_or_create_student()
     
-    all_marks = Mark.query.filter_by(student_id=student.id).all()
+    all_marks = Mark.query.filter_by(student_id=student.id, semester=student.semester).all()
+    if not all_marks:
+        all_marks = Mark.query.filter_by(student_id=student.id).all()
+
     exam_types = ['ISA', 'LB', 'LD', 'CP', 'SEA1', 'SEA2']
     
     # Also discover any custom exam types present in student's marks
     for m in all_marks:
         if m.exam_type and m.exam_type not in exam_types:
             exam_types.append(m.exam_type)
+
 
     exam_results = {}
     

@@ -177,6 +177,8 @@ def sso_login():
     # 4. Process Subjects and Marks
     subjects_data = payload.get('subjects', [])
     target_subject_name = None
+    enrolled_subject_names = []
+    enrolled_list = []
 
     for subj in subjects_data:
         s_id = subj.get('subject_id')
@@ -198,6 +200,18 @@ def sso_login():
 
         s_is_elective = bool(subj.get('is_elective', False))
         s_elective_group = subj.get('elective_group')
+
+        enrolled_subject_names.append(s_name)
+        enrolled_list.append({
+            'id': s_id,
+            'name': s_name,
+            'credits': credit_val,
+            'semester': s_sem,
+            'program': course,
+            'is_elective': s_is_elective,
+            'elective_group': s_elective_group,
+            'num_papers': 0
+        })
 
         # Check if this matches the target_subject_id
         if target_subject_id and (str(s_id) == str(target_subject_id) or str(target_subject_id).lower() == s_name.lower()):
@@ -259,7 +273,19 @@ def sso_login():
                     )
                     db.session.add(new_mark)
 
+    # Save student's active enrolled subjects from Padikkunnundo
+    student.enrolled_subjects = json.dumps(enrolled_list)
+
+    # Clean up any marks for this semester that are no longer in the student's enrolled subjects
+    if enrolled_subject_names:
+        Mark.query.filter(
+            Mark.student_id == student.id,
+            Mark.semester == semester,
+            ~Mark.subject.in_(enrolled_subject_names)
+        ).delete(synchronize_session=False)
+
     db.session.commit()
+
 
     # 5. Compute ML Insights
     update_student_ml_insights(student.id)

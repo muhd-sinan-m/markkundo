@@ -33,6 +33,7 @@ class Student(db.Model):
     semester = db.Column(db.Integer, default=1)
     course = db.Column(db.String(100), default='BCA')
     college = db.Column(db.String(255), default='Marian College Kuttikkanam')
+    enrolled_subjects = db.Column(db.Text, nullable=True)  # JSON-encoded list of enrolled subjects for active semester
     created_at = db.Column(db.String(50), default=lambda: datetime.utcnow().isoformat())
     
     # Relationships
@@ -49,7 +50,9 @@ class Student(db.Model):
             'semester': self.semester,
             'course': self.course,
             'college': self.college,
+            'enrolled_subjects': json.loads(self.enrolled_subjects) if self.enrolled_subjects else [],
         }
+
 
 class Mark(db.Model):
     __tablename__ = 'marks'

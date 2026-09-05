@@ -127,6 +127,8 @@ def create_app():
             if 'students' in inspector.get_table_names():
                 add_col_if_missing('students', 'course', 'VARCHAR(100)')
                 add_col_if_missing('students', 'college', 'VARCHAR(255)')
+                add_col_if_missing('students', 'enrolled_subjects', 'TEXT')
+
             if 'subjects' in inspector.get_table_names():
                 add_col_if_missing('subjects', 'credits', 'INTEGER DEFAULT 4')
                 add_col_if_missing('subjects', 'is_elective', 'BOOLEAN DEFAULT FALSE')
